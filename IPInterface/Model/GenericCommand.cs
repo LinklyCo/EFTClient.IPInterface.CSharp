@@ -2,60 +2,60 @@ using System;
 
 namespace PCEFTPOS.EFTClient.IPInterface
 {
-	public enum CommandType
-	{
-		Display = '0',
-		Print = '1',
-		GetPassword = '2',
-		Slave = 'Z',
+    public enum CommandType
+    {
+        Display = '0',
+        Print = '1',
+        GetPassword = '2',
+        Slave = 'Z',
         PayAtTable = '@',
         BasketData = '%'
     }
 
-	public enum DisplayLocation
-	{
-		PINPad = '0',
-		POS = '1'
-	}
+    public enum DisplayLocation
+    {
+        PINPad = '0',
+        POS = '1'
+    }
 
-	[Flags()]
-	public enum PINPadKeyMap
-	{
-		EnterKey = 0x01,
-		ClearKey = 0x02
-	}
+    [Flags()]
+    public enum PINPadKeyMap
+    {
+        EnterKey = 0x01,
+        ClearKey = 0x02
+    }
 
-	[Flags()]
-	public enum POSKeyMap
-	{
-		OKKey = 0x01,
-		CancelKey = 0x02
-	}
+    [Flags()]
+    public enum POSKeyMap
+    {
+        OKKey = 0x01,
+        CancelKey = 0x02
+    }
 
-	public enum PrinterLocation
-	{
-		NPT = 0x01
-	}
+    public enum PrinterLocation
+    {
+        NPT = 0x01
+    }
 
-	public enum PasswordDisplay
-	{
-		Enter_Code = '1'
-	}
+    public enum PasswordDisplay
+    {
+        Enter_Code = '1'
+    }
 
-	public class EFTGetPasswordRequest : EFTRequest
-	{
+    public class EFTGetPasswordRequest : EFTRequest
+    {
         public EFTGetPasswordRequest() : base(true, typeof(EFTGetPasswordResponse))
         {
         }
-            
-        public int MinPasswordLength { get; set; }
-		public int MaxPassworkLength { get; set; }
-		public int Timeout { get; set; }
-		public PasswordDisplay PasswordDisplay { get; set; }
-	}
 
-	public class EFTGetPasswordResponse : EFTResponse
-	{
+        public int MinPasswordLength { get; set; }
+        public int MaxPassworkLength { get; set; }
+        public int Timeout { get; set; }
+        public PasswordDisplay PasswordDisplay { get; set; }
+    }
+
+    public class EFTGetPasswordResponse : EFTResponse
+    {
         public EFTGetPasswordResponse() : base(typeof(EFTGetPasswordRequest))
         {
         }
@@ -77,7 +77,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
     public class EFTPayAtTableRequest : EFTRequest
     {
-        public EFTPayAtTableRequest(): base(false, typeof(EFTPayAtTableResponse))
+        public EFTPayAtTableRequest() : base(false, typeof(EFTPayAtTableResponse))
         {
         }
 

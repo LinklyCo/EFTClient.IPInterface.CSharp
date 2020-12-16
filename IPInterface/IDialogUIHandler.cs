@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace PCEFTPOS.EFTClient.IPInterface
+﻿namespace PCEFTPOS.EFTClient.IPInterface
 {
     /// <summary>
     /// An interface for a UI that implements the PC-EFTPOS dialog messages

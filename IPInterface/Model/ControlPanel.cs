@@ -4,29 +4,38 @@ namespace PCEFTPOS.EFTClient.IPInterface
 {
     /// <summary>Indicates which tabs of the PC-EFTPOS Client control panel to display.</summary>
 	public enum ControlPanelType
-	{
-		/// <summary>Show the control panel with all tabs available.</summary>
-		Full = '0',
-		/// <summary>Show the control panel with only the settlement tab available.</summary>
-		Settlement = '1',
-		/// <summary>Show the control panel with only the journal viewer tab available.</summary>
-		JournalViewer = '2',
-		/// <summary>Show the control panel with only the PIN pad setup tab available.</summary>
-		PINPadSetup = '3',
-		/// <summary>Show the control panel with only the status tab available.</summary>
-		Status = '4'
-	}
+    {
+        [Description("Full ('0')")]
+        /// <summary>Show the control panel with all tabs available.</summary>
+        Full = '0',
 
-	/// <summary>Indicates when to trigger the <see cref="EFTClientIP.OnDisplayControlPanel"/> event.</summary>
-	public enum ControlPanelReturnType
-	{
-		/// <summary>Trigger the event immediately.</summary>
-		Immediately = '0',
-		/// <summary>Trigger the event when the control panel is closed.</summary>
-		WhenClosed = '1',
-		/// <summary>Trigger the event immediately and when the control panel is closed.</summary>
-		ImmediatelyAndWhenClosed = '2',
-	}
+        [Description("Settlement Page ('1')")]
+        /// <summary>Show the control panel with only the settlement tab available.</summary>
+        Settlement = '1',
+
+        [Description("Journal Page ('2')")]
+        /// <summary>Show the control panel with only the journal viewer tab available.</summary>
+        JournalViewer = '2',
+
+        [Description("PINpad Setup Page ('3')")]
+        /// <summary>Show the control panel with only the PIN pad setup tab available.</summary>
+        PINPadSetup = '3',
+
+        [Description("Status Page ('4')")]
+        /// <summary>Show the control panel with only the status tab available.</summary>
+        Status = '4'
+    }
+
+    /// <summary>Indicates when to trigger the <see cref="EFTClientIP.OnDisplayControlPanel"/> event.</summary>
+    public enum ControlPanelReturnType
+    {
+        /// <summary>Trigger the event immediately.</summary>
+        Immediately = '0',
+        /// <summary>Trigger the event when the control panel is closed.</summary>
+        WhenClosed = '1',
+        /// <summary>Trigger the event immediately and when the control panel is closed.</summary>
+        ImmediatelyAndWhenClosed = '2',
+    }
 
 #pragma warning disable CS0618
     /// <summary>A PC-EFTPOS show control panel request object.</summary>
@@ -41,15 +50,15 @@ namespace PCEFTPOS.EFTClient.IPInterface
     [Obsolete("ControlPanelRequest is obsolete. Please use EFTControlPanelRequest")]
     public class ControlPanelRequest : EFTRequest
     {
-		/// <summary>Constructs a default show control panel request object.</summary>
-		public ControlPanelRequest() : base(true, typeof(EFTControlPanelResponse))
-		{
-		}
+        /// <summary>Constructs a default show control panel request object.</summary>
+        public ControlPanelRequest() : base(true, typeof(EFTControlPanelResponse))
+        {
+        }
 
         /// <summary>Indicates which tabs of the PC-EFTPOS Client control panel to display.</summary>
         /// <value>Type: <see cref="ControlPanelType" /><para>The default is <see cref="ControlPanelType.Full" />.</para></value>
         public ControlPanelType ControlPanelType { get; set; } = ControlPanelType.Full;
-        
+
         /// <summary>Indicates which tabs of the PC-EFTPOS Client control panel to display.</summary>
         /// <value>Type: <see cref="ControlPanelReturnType" /><para>The default is <see cref="ControlPanelReturnType.Immediately" />.</para></value>
         public ControlPanelReturnType ReturnType { get; set; } = ControlPanelReturnType.Immediately;
@@ -59,18 +68,18 @@ namespace PCEFTPOS.EFTClient.IPInterface
         public ReceiptPrintModeType ReceiptPrintMode { get; set; } = ReceiptPrintModeType.POSPrinter;
 
         /// <summary>Indicates whether PC-EFTPOS should cut receipts.</summary>
-        /// <value>Type: <see cref="ReceiptCutModeType"/><para>The default is DontCut. This property only applies when <see cref="EFTRequest.ReceiptPrintMode"/> is set to EFTClientPrinter.</para></value>
+        /// <value>Type: <see cref="ReceiptCutModeType"/><para>The default is DontCut. This property only applies when <see cref="ReceiptPrintMode"/> is set to EFTClientPrinter.</para></value>
         public ReceiptCutModeType ReceiptCutMode { get; set; } = ReceiptCutModeType.DontCut;
 
     }
 
-	/// <summary>A PC-EFTPOS show control panel response object.</summary>
-	public class EFTControlPanelResponse : EFTResponse
-	{
-		/// <summary>Constructs a default show control panel response object.</summary>
-		public EFTControlPanelResponse() : base(typeof(EFTControlPanelRequest))
-		{
-		}
+    /// <summary>A PC-EFTPOS show control panel response object.</summary>
+    public class EFTControlPanelResponse : EFTResponse
+    {
+        /// <summary>Constructs a default show control panel response object.</summary>
+        public EFTControlPanelResponse() : base(typeof(EFTControlPanelRequest))
+        {
+        }
 
         /// <summary>Indicates if the request was successful.</summary>
         /// <value>Type: <see cref="System.Boolean"/></value>

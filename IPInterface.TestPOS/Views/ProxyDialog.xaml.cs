@@ -1,8 +1,5 @@
-﻿using System;
-using System.Globalization;
-using System.Threading.Tasks;
+﻿using PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel;
 using System.Windows;
-using PCEFTPOS.EFTClient.IPInterface;
 
 
 namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
@@ -17,14 +14,14 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             InitializeComponent();
         }
 
-		private  void Window_Closed(object sender, System.EventArgs e)
+        private void Window_Closed(object sender, System.EventArgs e)
         {
-            
+
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            var d = (ViewModels.ProxyViewModel)DataContext;
+            var d = (ProxyViewModel)DataContext;
             if (d != null)
             {
                 if (!d.ProxyWindowClosing)

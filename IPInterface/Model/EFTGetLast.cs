@@ -26,15 +26,15 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <summary>Indicates where the request is to be sent to. Should normally be EFTPOS.</summary>
         /// <value>Type: <see cref="TerminalApplication"/><para>The default is <see cref="TerminalApplication.EFTPOS"/>.</para></value>
         public TerminalApplication Application { get; set; } = TerminalApplication.EFTPOS;
-	}
+    }
 
-	/// <summary>A PC-EFTPOS get last transaction response object.</summary>
-	public class EFTGetLastTransactionResponse : EFTResponse
-	{
-		/// <summary>Constructs a default terminal transaction response object.</summary>
-		public EFTGetLastTransactionResponse()
-			: base(typeof(EFTGetLastTransactionRequest))
-		{ }
+    /// <summary>A PC-EFTPOS get last transaction response object.</summary>
+    public class EFTGetLastTransactionResponse : EFTResponse
+    {
+        /// <summary>Constructs a default terminal transaction response object.</summary>
+        public EFTGetLastTransactionResponse()
+            : base(typeof(EFTGetLastTransactionRequest))
+        { }
 
         /// <summary>Two digit merchant code</summary>
         /// <value>Type: <see cref="string"/><para>The default is "00"</para></value>
@@ -100,7 +100,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Indicates which settlement batch this transaction will be included in.</summary>
         /// <value>Type: <see cref="System.DateTime" /><para>Settlement date is returned from the bank.</para></value>
-        /// <remarks>Use this property to balance POS EFT totals with settlement EFT totals.</remarks
+        /// <remarks>Use this property to balance POS EFT totals with settlement EFT totals</remarks>
         public DateTime DateSettlement { get; set; } = DateTime.MinValue;
 
         /// <summary>Indicates which settlement batch this transaction will be included in.</summary>
@@ -203,9 +203,9 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <value>Type: <see cref="System.Boolean" /></value>
         public bool LastTransactionSuccess { get; set; } = false;
 
-		/// <summary>Flags that indicate how the transaction was processed.</summary>
-		/// <value>Type: <see cref="TxnFlags" /></value>
-		public TxnFlags TxnFlags { get; set; } = new TxnFlags();
+        /// <summary>Flags that indicate how the transaction was processed.</summary>
+        /// <value>Type: <see cref="TxnFlags" /></value>
+        public TxnFlags TxnFlags { get; set; } = new TxnFlags();
 
         /// <summary>Indicates if an available balance is present in the response.</summary>
         /// <value>Type: <see cref="System.Boolean" /></value>

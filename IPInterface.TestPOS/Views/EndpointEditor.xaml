@@ -1,0 +1,121 @@
+﻿<Window x:Class="PCEFTPOS.EFTClient.IPInterface.TestPOS.EndpointEditor"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PCEFTPOS.EFTClient.IPInterface.TestPOS"
+        xmlns:Views="clr-namespace:PCEFTPOS.EFTClient.IPInterface.TestPOS.Views"
+        mc:Ignorable="d"
+        Height="600" Width="800" 
+        WindowStartupLocation="CenterScreen" 
+        WindowStyle="ToolWindow">
+    <Window.Resources>
+        <Style x:Key="CloudPairingWrapPanelVisibility" TargetType="WrapPanel">
+            <Setter Property="Visibility" Value="Visible"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding CurrentItem.TypeAsInt}" Value="0">
+                    <Setter Property="Visibility" Value="Hidden"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding CurrentItem.TypeAsInt}" Value="1">
+                    <Setter Property="Visibility" Value="Hidden"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding CurrentItem.TypeAsInt}" Value="3">
+                    <Setter Property="Visibility" Value="Hidden"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="CloudWrapPanelVisibility" TargetType="WrapPanel">
+            <Setter Property="Visibility" Value="Visible"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding CurrentItem.TypeAsInt}" Value="0">
+                    <Setter Property="Visibility" Value="Hidden"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding CurrentItem.TypeAsInt}" Value="1">
+                    <Setter Property="Visibility" Value="Hidden"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style TargetType="Label">
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="5">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="35"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="40"/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="2*"/>
+        </Grid.ColumnDefinitions>
+
+        <!--Master grid-->
+        <Label Grid.Row="0" Grid.ColumnSpan="2" Content="EFT-Client EndPoints" FontSize="14" FontWeight="Bold"  Width="256" HorizontalAlignment="Left"/>
+        
+        <ListBox Grid.Row="1" Grid.Column="0" x:Name="LstAccountView" ItemsSource="{Binding EndPoints}" SelectedItem="{Binding CurrentItem}" FontSize="13"/>
+
+        <WrapPanel Grid.Row="2" Grid.Column="0">
+            <Button x:Name="BtnAdd" Content="Add" Width="80" Height="32" HorizontalAlignment="Right" Margin="4" Click="BtnAdd_Click"/>
+            <Button x:Name="BtnDelete" Content="Delete" Width="80" Height="32" HorizontalAlignment="Right" Margin="4" Click="BtnDelete_Click"/>
+            <Button x:Name="BtnMoveUp" Content="↑" Width="32" Height="32" HorizontalAlignment="Right" Margin="4" Click="BtnMoveUp_Click"/>
+            <Button x:Name="BtnMoveDown" Content="↓" Width="32" Height="32" HorizontalAlignment="Right" Margin="4" Click="BtnMoveDown_Click"/>
+        </WrapPanel>
+            
+        <!--Detail grid-->
+        <StackPanel Grid.Row="1"  Grid.Column="1">
+
+            <WrapPanel Margin="4">
+                <Label Content="Name:" Width="96"/>
+                <TextBox x:Name="txtName" Width="352" VerticalContentAlignment="Center" Text="{Binding CurrentItem.Name, Mode=TwoWay}"/>
+            </WrapPanel>
+
+            <WrapPanel Margin="4">
+                <Label Content="Type:" Width="96"/>
+                <ComboBox x:Name="cboType" Width="256" VerticalContentAlignment="Center" SelectedIndex="{Binding CurrentItem.TypeAsInt, Mode=TwoWay}" ItemsSource="{Binding AccountTypes}"/>
+            </WrapPanel>
+
+            <WrapPanel Margin="4">
+                <Label Content="Address:" Width="96"/>
+                <TextBox x:Name="txtAddress" Width="352" VerticalContentAlignment="Center" Text="{Binding CurrentItem.Address, Mode=TwoWay}"/>
+                <Button x:Name="btnResetDefaultValues" Content="↺" Width="32" Height="27" VerticalAlignment="Center" Margin="4,0,0,0" 
+                            Command="{Binding ResetDefaultValues}"/>
+            </WrapPanel>
+
+            <WrapPanel Margin="4">
+                <Label Content="Port:" Width="96"/>
+                <TextBox x:Name="txtPort" Width="64" VerticalContentAlignment="Center" Text="{Binding CurrentItem.Port, Mode=TwoWay}"/>
+            </WrapPanel>
+
+            <WrapPanel Margin="4" Style="{StaticResource CloudWrapPanelVisibility}">
+                <Label Content="Client Id:" Width="96"/>
+                <TextBox x:Name="txtClientId" Width="256" VerticalContentAlignment="Center" Text="{Binding CurrentItem.ClientId, Mode=TwoWay}"/>
+            </WrapPanel>
+
+            <WrapPanel Margin="4" Style="{StaticResource CloudWrapPanelVisibility}">
+                <Label Content="Password:" Width="96"/>
+                <TextBox x:Name="txtPassword" Width="256" VerticalContentAlignment="Center" Text="{Binding CurrentItem.Password, Mode=TwoWay}"/>
+            </WrapPanel>
+
+            <WrapPanel Margin="4" Style="{StaticResource CloudWrapPanelVisibility}">
+                <Label Content="Pairing Code:" Width="96"/>
+                <TextBox x:Name="txtPairCode" Width="256" VerticalContentAlignment="Center" Text="{Binding CurrentItem.PairingCode, Mode=TwoWay}"/>
+            </WrapPanel>
+
+            <WrapPanel Margin="4" Style="{StaticResource CloudPairingWrapPanelVisibility}">
+                <Label Content="Token:" Width="96"/>
+                <TextBox x:Name="txtToken" Width="384" VerticalContentAlignment="Center" IsEnabled="False" Text="{Binding CurrentItem.Token, Mode=TwoWay}"/>
+                <Button x:Name="BtnPairPinpad" Content="Pair PINpad" Width="80" Height="32" Margin="4" Click="BtnPairPinpad_Click"/>                
+            </WrapPanel>
+
+        </StackPanel>
+
+        <Button x:Name="BtnSave" Grid.Row="2" Grid.Column="1" Content="Save" Width="80" Height="32" HorizontalAlignment="Right" Margin="4" Click="BtnSave_Click"/>
+    </Grid>
+</Window>

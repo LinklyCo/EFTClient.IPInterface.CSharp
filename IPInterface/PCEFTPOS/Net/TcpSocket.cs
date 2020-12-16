@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace PCEFTPOS.EFTClient.IPInterface
 {
     /// <exclude/>
-    class TcpSocket : ITcpSocket
+    internal class TcpSocket : ITcpSocket
     {
         Socket rawIpSocket;
         SslStream sslStream;
@@ -258,13 +258,11 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 sslStream = state.SslStream;
                 if (sslStream == null || !(sslStream.CanRead && sslStream.CanWrite))
                     return false;
-                //throw ( new IPClientException( IPClientExceptionType.ConnectException, "SSL connect failed." ) );
             }
             else
             {
                 if (rawIpSocket == null || !rawIpSocket.Connected)
                     return false;
-                //throw ( new IPClientException( IPClientExceptionType.ConnectException, "Socket connect failed." ) );
             }
 
             return true;

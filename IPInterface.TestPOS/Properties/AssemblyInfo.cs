@@ -1,6 +1,4 @@
 ﻿using System.Reflection;
-using System.Resources;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 
@@ -8,11 +6,11 @@ using System.Windows;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("IPInterface.TestPOS")]
-[assembly: AssemblyDescription("Test application for connecting to EFT-Client via TCP/IP connection.")]
+[assembly: AssemblyDescription("Test application for connecting to EFT-Client via TCP/IP connection")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("PC-EFTPOS Pty Ltd")]
+[assembly: AssemblyCompany("Linkly")]
 [assembly: AssemblyProduct("IPInterface.TestPOS")]
-[assembly: AssemblyCopyright("Copyright ©  2017")]
+[assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -51,7 +49,7 @@ using System.Windows;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.3.2.0")]
-[assembly: AssemblyFileVersion("1.3.2.0")]
+[assembly: AssemblyVersion("1.6.2.0")]
+[assembly: AssemblyFileVersion("1.6.2.0")]
 [assembly: Guid("4c988f82-f976-4663-9541-d0178f5aae47")]
 

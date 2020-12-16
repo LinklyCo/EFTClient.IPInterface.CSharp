@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace PCEFTPOS.EFTClient.IPInterface
 {
@@ -33,7 +29,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         {
         }
 
-		public bool Success { get; set; } = true;
+        public bool Success { get; set; } = true;
 
         public List<EFTClient> EFTClients { get; set; } = new List<EFTClient>();
     }

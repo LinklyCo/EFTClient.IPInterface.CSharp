@@ -1,352 +1,174 @@
-﻿
+﻿using PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel;
 using System;
 using System.Diagnostics;
+using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 
 namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
 {
-	/// <summary>
-	/// Interaction logic for MainWindow.xaml
-	/// </summary>
-	public partial class MainWindow : Window
-	{
-		ClientViewModel _vm = new ClientViewModel();
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : Window
+    {
+        readonly ClientViewModel vm = new ClientViewModel();
 
-		public MainWindow()
-		{
-			_vm.Initialize();
-			_vm.OnLog += _vm_OnLog;
-			_vm.PropertyChanged += _vm_PropertyChanged;
+        public MainWindow()
+        {
+            vm.Initialize();
+            vm.OnLog += VM_OnLog;
 
-			// Set up some defaults
-			_vm.Data.TransactionRequest.TxnType = TransactionType.PurchaseCash;
-			_vm.Data.TransactionRequest.AmtPurchase = 1.00M;
+            // Set up some defaults
+            vm.Data.TransactionRequest.TxnType = TransactionType.PurchaseCash;
+            vm.Data.TransactionRequest.AmtPurchase = 42.00M;
+            vm.Data.POSVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
-			DataContext = _vm;
-			InitializeComponent();
+            DataContext = vm;
+            InitializeComponent();
+        }
 
-			if (_vm.Data.Settings.UseSSL)
-			{
-				tPassword.Password = _vm.Data.Settings.CloudInfo.Password;
-				txtPassword.Password = _vm.Data.Settings.CloudInfo.Password;
-			}
-		}
+        private void VM_OnLog(string message)
+        {
+            tbLog.Dispatcher.Invoke(() =>
+            {
+                bool autoScroll = svLog.VerticalOffset == svLog.ScrollableHeight;
 
-		private void _vm_OnLog(string message)
-		{
-			try
-			{
-				tbLog.Dispatcher.Invoke(() =>
-				{
-					tbLog.AppendText(message);
-					if (!_vm.Data.SendKeyEnabled && tcUtilities.SelectedIndex == 2)
-					{
-						tbLog.Focus();
-						tbLog.SelectionStart = tbLog.Text.Length;
-					}
-				});
-
-			}
-			catch (Exception ex)
-			{
-				string m = ex.Message;
-			}
-
-
-		}
-
-		private void _vm_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-		{
-			if (e.PropertyName == "ConnectedState")
-			{
-				UpdateCloudLogonControls();
-			}
-		}
-
-		private void Window_Closed(object sender, EventArgs e)
-		{
-			try
-			{
-				_vm.SaveSettings();
-			}
-			catch (Exception ex)
-			{
-				Trace.WriteLine(ex.Message);
-			}
-			finally
-			{
-				Application.Current.Shutdown();
-			}
-		}
-
-		private async void btnConnect_Click(object sender, RoutedEventArgs e)
-		{
-			try
-			{
-				if (_vm.Data.ConnectedState == ConnectedStatus.Disconnected)
-				{
-					if (_vm.Data.Settings.UseSSL)
-					{
-                        if (_vm.Data.Settings.CloudInfo.PairLogon)
-                        {
-						    await _vm.DoCloudLogon(tPassword.Password,true);
-                        }
-                        else if (!string.IsNullOrEmpty(_vm.Data.Settings.CloudInfo.Token) && _vm.Data.Settings.CloudInfo.TokenLogon) //Logon Using the Token Already stored
-                        {
-                            await _vm.ConnectAsync();
-                            await _vm.DoCloudTokenLogon(_vm.Data.Settings.CloudInfo.Token);
-                        }
-                        else
-                        {
-                            await _vm.DoCloudLogon(tPassword.Password);
-                        }
-					}
-					else
-					{
-						await _vm.ConnectAsync();
-					}
-				}
-				else
-				{
-					_vm.Disconnect();
-				}
-
-				UpdateCloudLogonControls();
-			}
-			catch (Exception ex)
-			{
-				Trace.WriteLine(ex.Message);
-			}
-		}
-
-		private void chkUseSsl_Checked(object sender, RoutedEventArgs e)
-		{
-			UpdateConnectionDetails();
-			ShowCloudLogonControls();
-		}
-
-		private void chkUseSsl_Unchecked(object sender, RoutedEventArgs e)
-		{
-			UpdateConnectionDetails();
-			ShowCloudLogonControls();
-		}
-
-		private void UpdateConnectionDetails()
-		{
-			try
-			{
-				if (chkUseSsl.IsChecked.Value)
-				{
-					_vm.Data.Settings.Host = "pos.sandbox.cloud.pceftpos.com";
-					_vm.Data.Settings.Port = 443;
-				}
-				else
-				{
-					_vm.Data.Settings.Host = "127.0.0.1";
-					_vm.Data.Settings.Port = 2011;
-				}
-
-				txtAddress.Text = _vm.Data.Settings.Host;
-				txtPort.Text = _vm.Data.Settings.Port.ToString();
-
-				if (rbShowDialogAlways == null)
-					//|| rbShowDialogOnEvents == null
-					//|| rbHideDialog == null)
-					return;
-
-				if (!rbShowDialogAlways.IsChecked.Value)
-				{
-					if (chkUseSsl.IsChecked.Value)
-					{
-						rbShowDialogOnEvents.IsChecked = true;
-						UpdateDialogSettings();
-					}
-					else if (!chkUseSsl.IsChecked.Value)
-					{
-						rbHideDialog.IsChecked = true;
-						UpdateDialogSettings();
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				Trace.WriteLine(ex.Message);
-			}
-		}
-
-		private void UpdateCloudLogonControls()
-		{
-			try
-			{
-				if (_vm.Data.ConnectedState == ConnectedStatus.Connected)
-				{
-					wpCloudControls.Visibility = Visibility.Collapsed;
-				}
-				else
-				{
-					if (_vm.Data.Settings.UseSSL)
-					{
-						wpCloudControls.Visibility = Visibility.Visible;
-					}
-					else
-					{
-						wpCloudControls.Visibility = Visibility.Collapsed;
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				Trace.WriteLine(ex.Message);
-			}
-		}
-
-		private void ShowCloudLogonControls()
-		{
-			try
-			{
-				if (chkUseSsl.IsChecked.Value)
-				{
-					wpCloudControls.Visibility = Visibility.Visible;
-				}
-				else
-				{
-					wpCloudControls.Visibility = Visibility.Collapsed;
-				}
-			}
-			catch (Exception ex)
-			{
-				Trace.WriteLine(ex.Message);
-			}
-		}
-
-		private void tbMenu_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-		{
-			if (tbMenu.SelectedIndex == -1)
-				return;
-
-			TabItem tab = (TabItem)tbMenu.SelectedItem;
-			if (tab != null && tab.Header.Equals("Cloud Logon"))
-			{
-				if (_vm.Data.Settings.UseSSL)
-				{
-					txtPassword.Password = _vm.Data.Settings.CloudInfo.Password;
-				}
-			}
-
-		}
-
-		private async void btnCloudLogon_Click(object sender, RoutedEventArgs e)
-		{
-			try
-			{
-                if (_vm.Data.Settings.CloudInfo.TokenLogon)
+                tbLog.AppendText(message);
+                if (!vm.Data.SendKeyEnabled && tcUtilities.SelectedIndex == 2)
                 {
-                    _vm.Data.Settings.UseSSL = true; //Cannot do a token logon without SSL being true
-                    await _vm.DoCloudTokenLogon(_vm.Data.Token);
+                    tbLog.Focus();
+                    tbLog.SelectionStart = tbLog.Text.Length;
                 }
-                else
+
+                if(autoScroll)
                 {
-				    await _vm.DoCloudLogon(tPassword.Password);
+                    svLog.ScrollToBottom();
                 }
-			}
-			catch
-			{
-			}
-		}
+            });
+        }
 
-		private void Expander_Collapsed(object sender, RoutedEventArgs e)
-		{
-			ResizeWindow();
-		}
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            try
+            {
+                vm.SaveSettings();
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+            }
+            finally
+            {
+                Application.Current.Shutdown();
+            }
+        }
 
-		private void Expander_Expanded(object sender, RoutedEventArgs e)
-		{
-			ResizeWindow();
-		}
 
-		private void ResizeWindow()
-		{
-			if (exUtilities == null || exSettings == null)
-				return;
 
-			if (exUtilities.IsExpanded)
-			{
-				MinHeight = 1000;
-			}
-			else if (exSettings.IsExpanded)
-			{
-				MinHeight = 700;
-			}
-			else
-			{
-				MinHeight = 500;
-			}
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (vm.Data.Settings.DemoDialogOption == DemoDialogMode.AlwaysShow)
+            {
+                vm.ShowProxyDialog(true);
+            }
+            svLog.ScrollToBottom();
+        }
 
-			Height = MinHeight;
-		}
+        private void tcUtilities_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (tcUtilities == null || tbLog == null)
+                return;
 
-		private void Window_Initialized(object sender, EventArgs e)
-		{
-			ResizeWindow();
-		}
+            if (vm.Data.Settings.IsLogShown && tcUtilities.SelectedIndex == 2)
+            {
+                tbLog.Focus();
+                tbLog.SelectionStart = tbLog.Text.Length;
+            }
+        }
 
-		private void Window_Loaded(object sender, RoutedEventArgs e)
-		{
-			if (_vm.Data.Settings.DemoDialogOption == DemoDialogMode.AlwaysShow)
-			{
-				_vm.ShowProxyDialog(true);
-			}
+        private void chkPadItem_Checked(object sender, RoutedEventArgs e)
+        {
+            PadCheckBoxChecked(sender, e);
+        }
 
-			rbShowDialogAlways.IsChecked = (_vm.Data.Settings.DemoDialogOption == DemoDialogMode.AlwaysShow);
-			rbShowDialogOnEvents.IsChecked = (_vm.Data.Settings.DemoDialogOption == DemoDialogMode.ShowOnEvents);
-			rbHideDialog.IsChecked = (_vm.Data.Settings.DemoDialogOption == DemoDialogMode.Hide) | (!_vm.Data.Settings.UseSSL && _vm.Data.Settings.DemoDialogOption == DemoDialogMode.ShowOnEvents);
-		}
+        private void chkPadItem_Unchecked(object sender, RoutedEventArgs e)
+        {
+            PadCheckBoxUnchecked(sender, e);
+        }
 
-		private void DemoDialog_Checked(object sender, RoutedEventArgs e)
-		{
-			UpdateDialogSettings();
-		}
 
-		private void DemoDialog_Unchecked(object sender, RoutedEventArgs e)
-		{
-			UpdateDialogSettings();
-		}
+        bool padsLocked = false;
+        void RefreshSelectedPadText()
+        {
+            if (!padsLocked)
+            {
+                var sb = new StringBuilder();
+                vm.Data.SelectedPads.ForEach(i => sb.Append(i));
+                vm.Data.SelectedPad = sb.ToString();
+            }
+        }
 
-		private void UpdateDialogSettings()
-		{
-			if (rbShowDialogAlways.IsChecked.Value)
-			{
-				_vm.Data.Settings.DemoDialogOption = DemoDialogMode.AlwaysShow;
-				_vm.ShowProxyDialog(true);
-			}
-			else if (rbShowDialogOnEvents.IsChecked.Value)
-			{
-				_vm.Data.Settings.DemoDialogOption = DemoDialogMode.ShowOnEvents;
-				_vm.ShowProxyDialog(false);
-			}
-			else
-			{
-				_vm.Data.Settings.DemoDialogOption = DemoDialogMode.Hide;
-				_vm.ShowProxyDialog(false);
-			}
+        private void cboTPad_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter
+                    && sender is ComboBox cbo
+                    && (vm.Data.PadItems.FindIndex(x => x.ToString().Equals(cbo.Text)) == -1))
+            {
+                padsLocked = true;
+                e.Handled = true;
 
-			if (rbShowDialogAlways != null) rbShowDialogAlways.IsChecked = (_vm.Data.Settings.DemoDialogOption == DemoDialogMode.AlwaysShow);
-			if (rbShowDialogOnEvents != null) rbShowDialogOnEvents.IsChecked = (_vm.Data.Settings.DemoDialogOption == DemoDialogMode.ShowOnEvents);
-			if (rbHideDialog != null) rbHideDialog.IsChecked = (_vm.Data.Settings.DemoDialogOption == DemoDialogMode.Hide);
-		}
+                for (int i = 0; i < vm.Data.PadItemsList.Where(x => !x.IsChecked)?.Count(); i++)
+                {
+                    vm.Data.PadItemsList[i].IsChecked = false;
+                }
 
-		private void tcUtilities_SelectionChanged(object sender, SelectionChangedEventArgs e)
-		{
-			if (tcUtilities == null || tbLog == null)
-				return;
+                vm.Data.SelectedPads.Clear();
+                padsLocked = false;
+            }
+        }
 
-			if (_vm.Data.Settings.IsLogShown && tcUtilities.SelectedIndex == 2)
-			{
-				tbLog.Focus();
-				tbLog.SelectionStart = tbLog.Text.Length;
-			}
-		}
+        private void cboTPad_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            e.Handled = true;
+        }
 
-	}
+        private void PadCheckBoxChecked(object sender, RoutedEventArgs e)
+        {
+            if (padsLocked)
+                return;
+
+            if (sender is CheckBox ch && ch.DataContext is Pad chd)
+            {
+                var item = vm.Data.PadItems.Find(x => x.ToString().Equals(chd.Item));
+                if (item != null && !vm.Data.SelectedPads.Exists(x => x.Equals(item.Value)))
+                {
+                    vm.Data.SelectedPads?.Add(item.Value);
+                    RefreshSelectedPadText();
+                }
+            }
+        }
+
+        private void PadCheckBoxUnchecked(object sender, RoutedEventArgs e)
+        {
+            if (padsLocked)
+                return;
+
+            if (sender is CheckBox ch && ch.DataContext is Pad chd)
+            {
+                var item = vm.Data.PadItems.Find(x => x.ToString().Equals(chd.Item));
+                if (item != null)
+                {
+                    vm.Data.SelectedPads.Remove(item.Value);
+                    RefreshSelectedPadText();
+                }
+            }
+        }
+
+        private void ExUtilities_Collapsed(object sender, RoutedEventArgs e)
+        {
+
+        }
+    }
 }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace PCEFTPOS.EFTClient.IPInterface.Slave
+﻿namespace PCEFTPOS.EFTClient.IPInterface.Slave
 {
     public class EFTSlaveRequest : EFTRequest
     {

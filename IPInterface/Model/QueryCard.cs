@@ -5,38 +5,46 @@ namespace PCEFTPOS.EFTClient.IPInterface
     /// <summary>Indicates the type of logon to perform.</summary>
     public enum QueryCardType
     {
+        [Description("Read Card ('0')")]
         /// <summary>Read card only</summary>
         ReadCard = '0',
+
+        [Description("Read Card and Select Account ('1')")]
         /// <summary>Read card + select account</summary>
         ReadCardAndSelectAccount = '1',
+
+        [Description("Select Account ('5')")]
         /// <summary>Select account only</summary>
         SelectAccount = '5',
+
+        [Description("Pre-Swipe Start ('7')")]
         /// <summary>Pre-swipe</summary>
         /// <remarks>Do not use</remarks>
-        [Filter("WW")]
-        PreSwipe = '7',
+        PreSwipeStart = '7',
+
+        [Description("Pre-Swipe Loyalty ('8')")]
         /// <summary>Pre-swipe special</summary>
         /// <remarks>Do not use</remarks>
-        [Filter("WW")]
-        PreSwipeSpecial = '8',
+        PreSwipeLoyalty = '8',
+
+        [Description("Pre-Swipe Deposit ('9')")]
         /// <summary>Pre-swipe special 2</summary>
         /// <remarks>Do not use</remarks>
-        [Filter("WW")]
-        PreSwipeSpecial2 = '8'
+        PreSwipeDeposit = '9'
     }
 
 
     /// <summary>Indicates what tracks are available in the response.</summary>
     [Flags()]
-	public enum TrackFlags
-	{
-		/// <summary>Track 1 is available.</summary>
-		Track1,
-		/// <summary>Track 2 is available.</summary>
-		Track2,
-		/// <summary>Track 3 is available.</summary>
-		Track3
-	}
+    public enum TrackFlags
+    {
+        /// <summary>Track 1 is available.</summary>
+        Track1,
+        /// <summary>Track 2 is available.</summary>
+        Track2,
+        /// <summary>Track 3 is available.</summary>
+        Track3
+    }
 
 #pragma warning disable CS0618
     /// <summary>A PC-EFTPOS terminal query card request object.</summary>
@@ -51,11 +59,11 @@ namespace PCEFTPOS.EFTClient.IPInterface
     /// </summary>
     [Obsolete("QueryCardRequest is obsolete. Please use EFTQueryCardRequest")]
     public class QueryCardRequest : EFTRequest
-	{
-		/// <summary>Constructs a default terminal query card request object.</summary>
-		public QueryCardRequest() : base(true, typeof(EFTQueryCardResponse))
-		{
-		}
+    {
+        /// <summary>Constructs a default terminal query card request object.</summary>
+        public QueryCardRequest() : base(true, typeof(EFTQueryCardResponse))
+        {
+        }
 
         /// <summary>Two digit merchant code</summary>
         /// <value>Type: <see cref="string"/><para>The default is "00"</para></value>
@@ -74,14 +82,14 @@ namespace PCEFTPOS.EFTClient.IPInterface
         public TerminalApplication Application { get; set; } = TerminalApplication.EFTPOS;
     }
 
-	/// <summary>A PC-EFTPOS terminal query card response object.</summary>
-	public class EFTQueryCardResponse : EFTResponse
-	{
-		/// <summary>Constructs a default terminal logon response object.</summary>
-		public EFTQueryCardResponse()
-			: base(typeof(EFTQueryCardRequest))
-		{
-		}
+    /// <summary>A PC-EFTPOS terminal query card response object.</summary>
+    public class EFTQueryCardResponse : EFTResponse
+    {
+        /// <summary>Constructs a default terminal logon response object.</summary>
+        public EFTQueryCardResponse()
+            : base(typeof(EFTQueryCardRequest))
+        {
+        }
 
         /// <summary>Two digit merchant code</summary>
         /// <value>Type: <see cref="string"/><para>The default is "00"</para></value>

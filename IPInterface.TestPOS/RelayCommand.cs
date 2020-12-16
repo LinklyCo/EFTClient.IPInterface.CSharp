@@ -5,8 +5,8 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
 {
     public class RelayCommand : ICommand
     {
-        private Action<object> execute;
-        private bool canExecute;
+        private readonly Action<object> execute;
+        private readonly bool canExecute;
 
         public event EventHandler CanExecuteChanged
         {

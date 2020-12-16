@@ -1,16 +1,13 @@
-﻿using PCEFTPOS.EFTClient.IPInterface;
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Runtime.Serialization;
-using System.Collections.Generic;
-using System.Net.Http;
-using Newtonsoft.Json;
-using System.Net.Http.Headers;
 
 namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemoAsync
 {
@@ -50,26 +47,12 @@ namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemoAsync
     {
 
         IEFTClientIPAsync _eft = null;
-        ISettings _settings = null;
+        readonly ISettings _settings = null;
         bool _isServerVerified = false;
         bool _navigating = false;
 
         //TOKENS
-        private readonly string posName = "SIMPLE REST DEMO";
-        private readonly string posVersion = "1.0.0";
-        private readonly string posId = "7253230A-8983-4839-9744-CCA8291F9DB4";
-
-        private readonly string baseAuthApiUri = "https://auth.sandbox.cloud.pceftpos.com/v1";
-        private readonly string basePosApiUri = "https://rest.pos.sandbox.cloud.pceftpos.com/v1";
-
         private readonly string defaultCloudURL = "pos.sandbox.cloud.pceftpos.com:443";
-
-        //private readonly string baseAuthApiUri = "http://localhost:53194/v1";
-        //private readonly string basePosApiUri = "http://localhost:53194/v1";
-
-        string token = null;
-        private DateTime tokenExpiry = new DateTime();
-        readonly HttpClient client = new HttpClient();
 
         enum NotificationType { Normal, Error, Success }
 
@@ -80,54 +63,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemoAsync
 
             InitializeComponent();
         }
-
-        //async void TokenTxn()
-        //{// Get an auth token 
-        //    try
-        //    {
-        //        await RefreshTokenAsync();
-        //
-        //        ShowNotification("TRANSACTION IN PROGRESS", "", "CHECK PIN PAD FOR STATUS", NotificationType.Normal, false);
-        //
-        //        // TxnType is required
-        //        //string txnType = GetTxnType().ToString();
-        //        string txnType = cboType.Text[0].ToString(); //Hacky thing i'll fix later
-        //                                                     // Set ReferenceNumber to something unique
-        //        string txnRef = DateTime.Now.ToString("YYMMddHHmmssfff");
-        //        // Set AmountCash for cash out, and AmountPurchase for purchase/refund
-        //        int amtPurchase = (txnType == "C") ? 0 : (int)(decimal.Parse(txtAmount.Text) * 100);
-        //        int amtCash = (txnType == "C") ? (int)(decimal.Parse(txtAmount.Text) * 100) : 0;
-        //
-        //        var requestContent = new { Request = new { txnType, amtPurchase, amtCash, txnRef } };
-        //        var currentSessionId = Guid.NewGuid().ToString();
-        //
-        //
-        //        var request = new HttpRequestMessage(HttpMethod.Post, $"{basePosApiUri}/sessions/{currentSessionId}/transaction?async=false")
-        //        {
-        //            Content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(requestContent), System.Text.Encoding.UTF8, "application/json")
-        //        };
-        //        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        //        HttpResponseMessage httpResponse = await client.SendAsync(request);
-        //        httpResponse.EnsureSuccessStatusCode();
-        //
-        //        var apiResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiResponse<TransactionResponse>>(await httpResponse.Content.ReadAsStringAsync());
-        //        var r = apiResponse.Response;
-        //
-        //        HideDialog();
-        //
-        //        ShowNotification(
-        //            $"TRANSACTION {(r.Success ? "OK" : "FAILED")}",
-        //            $"{r.ResponseCode} {r.ResponseText}",
-        //            "",
-        //            r.Success ? NotificationType.Success : NotificationType.Error,
-        //            true
-        //            );
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        ShowNotification("TRANSACTION FAILURE", "", ex.Message, NotificationType.Error, true);
-        //    }
-        //}
 
         async void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -148,7 +83,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemoAsync
             }
             // Try to connect if we have an address. Either navigate to the main 
             // page (if we are connected) or the settings page (if we aren't)
-           else if (_settings?.EFTClientAddress.Length > 0 && connected == false)
+           else if (_settings?.EFTClientAddress.Length > 0 && connected)
            {
                 connected = await ConnectAsync();
            }
@@ -207,7 +142,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemoAsync
                 var enableCloud = _settings.EnableCloud;
                 int tmpPortVar = 0;
                 var addr = _settings.EFTClientAddress.Split(new char[] { ':' });
-                if (addr.Length < 2 || int.TryParse(addr[1], out tmpPortVar) == false)
+                if (addr.Length < 2 || !int.TryParse(addr[1], out tmpPortVar))
                 {
                     ShowNotification("INVALID ADDRESS", "", "", NotificationType.Error, true);
                 }
@@ -258,81 +193,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemoAsync
                 ShowNotification("PAIRING FAILURE", "", ex.Message, NotificationType.Error, true);
             }
         }
-        async Task<bool> ConnectAsyncToken()
-        {
-            ShowNotification("REFRESHING TOKEN, PLEASE WAIT...", "", "", NotificationType.Normal, false);
 
-            try
-            {
-                await RefreshTokenAsync();
-                HideNotification();
-                UpdateSettingsPageUI();
-            }
-            catch (Exception e)
-            {
-                UpdateSettingsPageUI();
-                ShowNotification("ERROR CONTACTING PC-EFTPOS CLOUD", "", e.Message, NotificationType.Error, true);
-                return false;
-            }
-            var connected = await ConnectAsync();
-            return connected;
-        }
-
-        async Task<string> RefreshTokenAsync()
-        {
-            //var uri = $"{baseAuthApiUri}/tokens/cloudpos";
-            //var Secret = _settings.Token;
-            //var request = new HttpRequestMessage(HttpMethod.Post, uri)
-            //{
-            //    Content = new StringContent(JsonConvert.SerializeObject(new { Secret, posName, posVersion, posId }), System.Text.Encoding.UTF8, "application/json")
-            //};
-            //
-            //var httpResponse = await client.SendAsync(request);
-            //httpResponse.EnsureSuccessStatusCode();
-            //
-            //var tokenResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<TokenResponse>(await httpResponse.Content.ReadAsStringAsync());
-            //token = tokenResponse.Token;
-            //tokenExpiry = DateTime.Now.AddSeconds(tokenResponse.ExpirySeconds);
-            bool connected = true;
-            var waiting = await _eft.WriteRequestAsync(new EFTCloudTokenLogonRequest() { Token = _settings.Token });
-            while (waiting)
-            {
-                var eftResponse = await _eft.ReadResponseAsync(new CancellationTokenSource(45000).Token);
-                if (eftResponse is EFTCloudTokenLogonResponse)
-                {
-                    var cloudLogonResponse = eftResponse as EFTCloudTokenLogonResponse;
-                    if (!cloudLogonResponse.Success)
-                    {
-                        connected = false;
-                    }
-                    waiting = false;
-                }
-            }
-
-            return token;
-        }
-       //async Task<bool> ConnectAsyncSimple()
-       //{
-       //    var enableCloud = _settings.EnableCloud;
-       //    var addr = _settings.EFTClientAddress.Split(new char[] { ':' });
-       //    if (addr.Length < 2 || int.TryParse(addr[1], out int tmpPort) == false)
-       //    {
-       //        ShowNotification("INVALID ADDRESS", "", "", NotificationType.Error, true);
-       //        return false;
-       //    }
-       //
-       //    //ShowNotification("CONTACTING EFT-CLIENT, PLEASE WAIT...", "", "", NotificationType.Normal, false);
-       //    bool connected = false;
-       //    try
-       //    {
-       //        connected = await _eft.ConnectAsync(addr[0], tmpPort, enableCloud, enableCloud);
-       //    }
-       //    catch (Exception)
-       //    {
-       //        connected = false;
-       //    }
-       //    return connected;
-       //}
         async Task<bool> ConnectAsync()
         {
             try
@@ -499,7 +360,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemoAsync
 
         void OnDisplay(EFTDisplayResponse r)
         {
-            ShowDialog((r.DisplayText.Length >= 0) ? r.DisplayText[0] : "", (r.DisplayText.Length >= 1) ? r.DisplayText[1] : "", r.OKKeyFlag, r.CancelKeyFlag, r.AcceptYesKeyFlag, r.DeclineNoKeyFlag, r.AuthoriseKeyFlag);
+            ShowDialog((r.DisplayText.Length > 0) ? r.DisplayText[0] : "", (r.DisplayText.Length > 1) ? r.DisplayText[1] : "", r.OKKeyFlag, r.CancelKeyFlag, r.AcceptYesKeyFlag, r.DeclineNoKeyFlag, r.AuthoriseKeyFlag);
         }
 
         void OnTerminated()
@@ -631,9 +492,8 @@ namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemoAsync
                 catch (Exception ex)
                 {
                     //Format the error message so it can properly appear in the notification
-                    ex.Message.Replace('\r', ' ');
-                    ex.Message.Replace('\n', ' ');
-                    ShowNotification("FAILED TO SEND TXN", ex.Message, null, NotificationType.Error, true);
+                    var m = ex.Message.Replace('\r', ' ').Replace('\n', ' ');
+                    ShowNotification("FAILED TO SEND TXN", m, null, NotificationType.Error, true);
                     return;
                 }
 
@@ -650,7 +510,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemoAsync
                     r.AmtCash = (r.TxnType == TransactionType.CashOut) ? decimal.Parse(txtAmount.Text) : 0;
                     if (r.AmtPurchase < 0 || r.AmtCash < 0)
                     {
-                        throw new Exception("Amount Cannot Be Less Than 0");
+                        throw new ArgumentException("Amount Cannot Be Less Than 0");
                     }
                 }catch(Exception exc)
                 {
@@ -658,7 +518,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemoAsync
                     return;
                 }
                 // Set POS or pinpad printer
-                r.ReceiptPrintMode = ReceiptPrintModeType.POSPrinter;
+                r.ReceiptAutoPrint = ReceiptPrintModeType.POSPrinter;
                 // Set application. Used for gift card & 3rd party payment
                 r.Application = TerminalApplication.EFTPOS;
                 // Set basket PAD tag
@@ -881,8 +741,15 @@ namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemoAsync
             {
                 _settings.Token = txtToken.Text;
                 bool connected = await ConnectAsync();
-                if (!connected) { throw new Exception("Connection Failure"); }
-                else { _settings.Save(); NavigateToMainPage(); }
+                if (!connected) 
+                { 
+                    throw new Exception("Connection Failure");
+                }
+                else 
+                { 
+                    _settings.Save(); 
+                    NavigateToMainPage(); 
+                }
             }
             catch (Exception ex)
             {

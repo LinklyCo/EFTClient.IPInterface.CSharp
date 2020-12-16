@@ -14,7 +14,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <param name="useSSL">Enables SSL connection.</param>
         /// <param name="useKeepAlive">True to enable TCP keep alives</param>
         /// <returns></returns>
-        Task<bool> ConnectAsync(string hostName, int hostPort, bool useSSL = true, bool useKeepAlive = true);
+        Task<bool> ConnectAsync(string hostName, int hostPort, bool useSSL = false, bool useKeepAlive = false);
 
         /// <summary>
         /// Disconnect from the EFT-Client (async).
@@ -114,7 +114,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Indicates whether to allow TCP keep-alives.</summary>
         /// <value>Type: <see cref="System.Boolean" /><para>Defaults to FALSE.</para></value>
-        bool UseKeepAlive { get;  }
+        bool UseKeepAlive { get; }
 
         /// <summary>Indicates whether there is a request currently in progress.</summary>
         bool IsRequestInProgress { get; }

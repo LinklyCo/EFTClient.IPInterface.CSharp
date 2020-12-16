@@ -1,12 +1,7 @@
-﻿
-using System.Windows;
-using System.IO;
-
-using Newtonsoft.Json;
+﻿using PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel;
 using System;
-using System.Windows.Data;
-using System.Globalization;
 using System.Diagnostics;
+using System.Windows;
 
 namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
 {
@@ -17,11 +12,14 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
     {
         public PadViewModel ViewModel = null;
 
-        public PadEditor(string filename, string title = "PAD")
+        public PadEditor(string filename, string title = "PAD Tag", bool dataButtonVisible = true)
         {
             ViewModel = new PadViewModel(filename);
             DataContext = ViewModel;
-            Title = $"Select {title} content";
+
+            Title = $"{title} Collection Editor";
+            ViewModel.CollectionName = $"{title} Collection";
+            ViewModel.DataButtonVisible = dataButtonVisible;
 
             InitializeComponent();
             txtMName.Focus();
@@ -43,20 +41,21 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
 
                 if (lstPadContent.SelectedIndex < 0)
                 {
+                    btnMUp.IsEnabled = false;
+                    btnMDown.IsEnabled = false;
+
                     btnMAdd.Content = "Add";
                     txtMName.Focus();
                     return;
                 }
 
-                var items = lstPadContent.SelectedItem.ToString().Split('|');
-                if (items.Length > 0)
-                {
-                    ViewModel.PadName = items[0].TrimEnd();
-                }
+                btnMUp.IsEnabled = lstPadContent.SelectedIndex > 0;
+                btnMDown.IsEnabled = lstPadContent.SelectedIndex < lstPadContent.Items.Count - 1;
 
-                if (items.Length > 1)
+                if (lstPadContent.SelectedItem is ExternalData selected)
                 {
-                    ViewModel.PadValue = items[1].TrimStart();
+                    ViewModel.PadName = selected.Name;
+                    ViewModel.PadValueDisplay = selected.Value;
                 }
 
                 btnMAdd.Content = "New";
@@ -71,7 +70,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
         {
             try
             {
-                if (lstPadEditor == null )
+                if (lstPadEditor == null)
                     return;
 
                 if (lstPadEditor.SelectedIndex < 0)
@@ -81,20 +80,14 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
                     return;
                 }
 
-                var items = lstPadEditor.SelectedItem.ToString().Split('|');
-                if (items.Length > 0)
-                {
-                    ViewModel.PadTagName = items[0].TrimEnd();
-                }
 
-                if (items.Length > 1)
-                {
-                    ViewModel.PadTagValue = items[1].TrimStart();
-                }
+                var pt = (PadTagViewModel)lstPadEditor.SelectedItem;
+                ViewModel.PadTagName = pt?.Name;
+                ViewModel.PadTagValue = pt?.Data;
 
                 btnAdd.Content = "New";
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Trace.WriteLine(ex.Message);
             }
@@ -137,8 +130,8 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             {
                 if (btnMAdd.Content.Equals("New"))
                 {
-                    ViewModel.PadName = string.Empty;
-                    ViewModel.PadValue = string.Empty;
+                    ViewModel.PadName = "[Name your PAD Tag collection]";
+                    ViewModel.PadValueDisplay = "TAG010HelloWorld";
                     btnMAdd.Content = "Add";
                     lstPadContent.SelectedIndex = -1;
                 }
@@ -150,7 +143,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
 
                 txtMName.Focus();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Trace.WriteLine(ex.Message);
             }
@@ -163,7 +156,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
                 ViewModel.UpdatePadContentFunc(lstPadContent.SelectedIndex);
                 lstPadContent.Items.Refresh();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Trace.WriteLine(ex.Message);
             }
@@ -176,7 +169,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
                 ViewModel.UpdatePadTagFunc(lstPadEditor.SelectedIndex);
                 lstPadEditor.Items.Refresh();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Trace.WriteLine(ex.Message);
             }
@@ -189,11 +182,50 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
                 ViewModel.SavePadFieldFunc();
                 lstPadContent.Items.Refresh();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Trace.WriteLine(ex.Message);
             }
         }
+
+        public static ExternalDataList GetData(string filename) => new PadEditor(filename).ViewModel.UpdatedExternalData;
+
+        public static ExternalDataList AddData(string filename, ExternalData newData)
+        {
+            PadEditor padEditor = new PadEditor(filename);
+
+            ExternalData found = padEditor.ViewModel.UpdatedExternalData.Find(x => x.Name.Equals(newData.Name));
+            if (found != null)
+                found.Value = newData.Value;
+            else
+                padEditor.ViewModel.PadContentList.Add(newData);
+
+            padEditor.ViewModel.Save();
+
+            return padEditor.ViewModel.UpdatedExternalData;
+        }
+
+        private void ReorderItem(bool moveDown)
+        {
+            int index = lstPadContent.SelectedIndex;
+            int newIndex = -1;
+            if (moveDown && (index < (ViewModel.PadContentList.Count - 1)))
+                newIndex = index + 1;
+            else if (!moveDown && index > 0)
+                newIndex = index - 1;
+
+            if (newIndex >= 0)
+            {
+                var item = ViewModel.PadContentList[index];
+                ViewModel.PadContentList.Remove(item);
+                ViewModel.PadContentList.Insert(newIndex, item);
+                lstPadContent.SelectedIndex = newIndex;
+            }
+        }
+
+        private void btnMUp_Click(object sender, RoutedEventArgs e)   => ReorderItem(false);
+
+        private void btnMDown_Click(object sender, RoutedEventArgs e) => ReorderItem(true);
     }
 
 }

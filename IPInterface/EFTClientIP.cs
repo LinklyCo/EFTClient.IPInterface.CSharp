@@ -135,7 +135,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <returns>FALSE if an error occurs</returns>
         public bool DoRequest(EFTRequest request, [CallerMemberName] string member = "")
         {
-			SetCurrentRequest(request);
+            SetCurrentRequest(request);
             Log(LogLevel.Info, tr => tr.Set($"Request via {member}"));
 
             // Save the current synchronization context so we can use it to send events 
@@ -383,10 +383,10 @@ namespace PCEFTPOS.EFTClient.IPInterface
             _parser = new DefaultMessageParser();
 
             socket = new TcpSocket(HostName, HostPort);
-            socket.OnTerminated += new TcpSocketEventHandler(_OnTerminated);
-            socket.OnDataWaiting += new TcpSocketEventHandler(_OnDataWaiting);
-            socket.OnError += new TcpSocketEventHandler(_OnError);
-            socket.OnSend += new TcpSocketEventHandler(_OnSend);
+            socket.OnTerminated += new TcpSocketEventHandler(TcpSocketOnTerminated);
+            socket.OnDataWaiting += new TcpSocketEventHandler(TcpSocketOnDataWaiting);
+            socket.OnError += new TcpSocketEventHandler(TcpSocketOnError);
+            socket.OnSend += new TcpSocketEventHandler(TcpSocketOnSend);
 
             hideDialogEvent = new AutoResetEvent(false);
         }
@@ -428,7 +428,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
                         break;
 
                     case EFTDisplayResponse r:
-						//DialogUIHandler.HandleDisplayResponse(r);
+                        //DialogUIHandler.HandleDisplayResponse(r);
                         FireClientResponseEvent(nameof(OnDisplay), OnDisplay, new EFTEventArgs<EFTDisplayResponse>(r));
                         break;
 
@@ -488,9 +488,9 @@ namespace PCEFTPOS.EFTClient.IPInterface
                         FireClientResponseEvent(nameof(OnConfigMerchant), OnConfigMerchant, new EFTEventArgs<EFTConfigureMerchantResponse>(r));
                         break;
 
-					case EFTClientListResponse r:
-						FireClientResponseEvent(nameof(OnClientList), OnClientList, new EFTEventArgs<EFTClientListResponse>(r));
-						break;
+                    case EFTClientListResponse r:
+                        FireClientResponseEvent(nameof(OnClientList), OnClientList, new EFTEventArgs<EFTClientListResponse>(r));
+                        break;
 
                     default:
                         Log(LogLevel.Error, tr => tr.Set($"Unknown response type", response));
@@ -514,7 +514,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         {
             // Store current request.
             this.currentRequest = eftRequest;
-			
+
             // Build request
             var requestString = "";
 
@@ -527,34 +527,34 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 Log(LogLevel.Error, tr => tr.Set($"An error occured parsing the request", e));
                 throw;
             }
-            
+
             Log(LogLevel.Debug, tr => tr.Set($"Tx {requestString}"));
 
             // Send the request string to the IP client.
             return socket.Send(requestString);
         }
 
-		private void SetCurrentRequest(EFTRequest request)
-		{
-			// Always set _currentRequest to the last request we send
-			currentRequest = request;
+        private void SetCurrentRequest(EFTRequest request)
+        {
+            // Always set _currentRequest to the last request we send
+            currentRequest = request;
 
-			if (request.GetIsStartOfTransactionRequest())
-			{
-				_currentStartTxnRequest = request;
-			}
-		}
-		#endregion
+            if (request.GetIsStartOfTransactionRequest())
+            {
+                _currentStartTxnRequest = request;
+            }
+        }
+        #endregion
 
-		#region Parse response
+        #region Parse response
 
-		bool ReceiveEFTResponse(byte[] data)
+        bool ReceiveEFTResponse(byte[] data)
         {
             // Clear the receive buffer if 5 seconds has lapsed since the last message
             var tc = System.Environment.TickCount;
             if (tc - recvTickCount > 5000)
             {
-                Log(LogLevel.Debug, tr => tr.Set($"Data is being cleared from the buffer due to a timeout. Content {recvBuf.ToString()}"));
+                Log(LogLevel.Debug, tr => tr.Set($"Data is being cleared from the buffer due to a timeout. Content {recvBuf}"));
                 recvBuf = "";
             }
             recvTickCount = System.Environment.TickCount;
@@ -602,16 +602,16 @@ namespace PCEFTPOS.EFTClient.IPInterface
                         var response = recvBuf.Substring(index, length - 5);
                         FireOnTcpReceive(response);
 
-						// Process the response
-						EFTResponse eftResponse = null;
+                        // Process the response
+                        EFTResponse eftResponse = null;
                         try
                         {
-							eftResponse = _parser.StringToEFTResponse(response);
-							ProcessEFTResponse(eftResponse);
-							if(eftResponse.GetType() == _currentStartTxnRequest?.GetPairedResponseType())
-							{
-								dialogUIHandler.HandleCloseDisplay();
-							}
+                            eftResponse = _parser.StringToEFTResponse(response);
+                            ProcessEFTResponse(eftResponse);
+                            if (eftResponse.GetType() == _currentStartTxnRequest?.GetPairedResponseType())
+                            {
+                                dialogUIHandler.HandleCloseDisplay();
+                            }
                         }
                         catch (ArgumentException argumentException)
                         {
@@ -644,7 +644,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         #region Event Handlers
 
-        void _OnError(object sender, TcpSocketEventArgs e)
+        void TcpSocketOnError(object sender, TcpSocketEventArgs e)
         {
             EFTClientIPErrorType errorType = EFTClientIPErrorType.Socket_GeneralError;
 
@@ -667,16 +667,16 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
             FireOnSocketFailEvent(errorType, e.Error);
         }
-        void _OnDataWaiting(object sender, TcpSocketEventArgs e)
+        void TcpSocketOnDataWaiting(object sender, TcpSocketEventArgs e)
         {
             Log(LogLevel.Debug, tr => tr.Set($"Rx>>{System.Text.ASCIIEncoding.ASCII.GetString(e.Bytes)}<<"));
             ReceiveEFTResponse(e.Bytes);
         }
-        void _OnTerminated(object sender, TcpSocketEventArgs e)
+        void TcpSocketOnTerminated(object sender, TcpSocketEventArgs e)
         {
             FireOnTerminatedEvent(e.Error);
         }
-        void _OnSend(object sender, TcpSocketEventArgs e)
+        void TcpSocketOnSend(object sender, TcpSocketEventArgs e)
         {
             FireOnTcpSend(e.Message);
         }
@@ -774,9 +774,9 @@ namespace PCEFTPOS.EFTClient.IPInterface
         public LogLevel LogLevel { get; set; } = LogLevel.Off;
 
         IDialogUIHandler dialogUIHandler = null;
-		private EFTRequest _currentStartTxnRequest;
+        private EFTRequest _currentStartTxnRequest;
 
-		public IDialogUIHandler DialogUIHandler
+        public IDialogUIHandler DialogUIHandler
         {
             get
             {
@@ -852,8 +852,8 @@ namespace PCEFTPOS.EFTClient.IPInterface
         public event EventHandler<EFTEventArgs<EFTSlaveResponse>> OnSlave;
         /// <summary>Fired when a get config merchant result is received.</summary>
         public event EventHandler<EFTEventArgs<EFTConfigureMerchantResponse>> OnConfigMerchant;
-		/// <summary>Fired whan a get client list result is received.</summary>
-		public event EventHandler<EFTEventArgs<EFTClientListResponse>> OnClientList;
+        /// <summary>Fired whan a get client list result is received.</summary>
+        public event EventHandler<EFTEventArgs<EFTClientListResponse>> OnClientList;
         #endregion
     }
 }

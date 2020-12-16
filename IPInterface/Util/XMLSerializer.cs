@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -34,19 +32,8 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         public static T Deserialize<T>(string input)
         {
-            T obj = default(T);
-            try
-            {
-                var serializer = new XmlSerializer(typeof(T));
-                obj = (T)serializer.Deserialize(new System.IO.StringReader(input));
-            }
-            catch (Exception ex)
-            {
-                // Invalid XML
-                throw ex;
-            }
-
-            return obj;
+            var serializer = new XmlSerializer(typeof(T));
+            return (T)serializer.Deserialize(new System.IO.StringReader(input));
         }
     }
 }

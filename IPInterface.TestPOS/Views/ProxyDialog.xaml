@@ -126,6 +126,9 @@
                 <DataTrigger Binding="{Binding DisplayDetails.InputType}" Value="Char">
                     <Setter Property="Visibility" Value="Collapsed"/>
                 </DataTrigger>
+                <DataTrigger Binding="{Binding DisplayDetails.InputType}" Value="BarCode">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 

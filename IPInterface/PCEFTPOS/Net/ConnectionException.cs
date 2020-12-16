@@ -8,7 +8,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         {
         }
 
-        public ConnectionException(string message, Exception innerException) 
+        public ConnectionException(string message, Exception innerException)
             : base(message, innerException)
         {
         }

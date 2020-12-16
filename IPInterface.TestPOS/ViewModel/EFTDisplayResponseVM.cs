@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel;
 
-namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModels
+namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 {
-    public class EFTDisplayResponseVM: INotifyPropertyChanged
+    public class EFTDisplayResponseVM : INotifyPropertyChanged
     {
         /// <summary>Constructs a default display response object.</summary>
         public EFTDisplayResponseVM(EFTDisplayResponse m)
@@ -30,7 +30,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModels
 
         /// <summary>Text to be displayed. Each display line is concatenated.</summary>
         /// <value>Type: <see cref="System.String" >String array</see></value>
-        public string[] DisplayText { get; set; } = new string[] { "", "" };
+        public string[] DisplayText { get; set; }
 
         /// <summary>Indicates whether the Cancel button is to be displayed.</summary>
         /// <value>Type: <see cref="System.Boolean" /></value>
@@ -52,11 +52,11 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModels
         /// <value>Type: <see cref="System.Boolean" /></value>
         public bool OKKeyFlag { get; set; } = false;
 
-        public InputType InputType { get; set; } = InputType.None;
+        public InputType InputType { get; set; }
 
-        public GraphicCode GraphicCode { get; set; } = GraphicCode.None;
+        public GraphicCode GraphicCode { get; set; }
 
-        public PadField PurchaseAnalysisData { get; set; } = new PadField();
+        public PadField PurchaseAnalysisData { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
     }

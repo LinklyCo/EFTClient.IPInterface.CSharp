@@ -199,7 +199,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemo
             r.AmtPurchase = (r.TxnType == TransactionType.CashOut) ? 0 : decimal.Parse(txtAmount.Text);
             r.AmtCash = (r.TxnType == TransactionType.CashOut) ? decimal.Parse(txtAmount.Text) : 0;
             // Set POS or pinpad printer
-            r.ReceiptPrintMode = ReceiptPrintModeType.POSPrinter;
+            r.ReceiptAutoPrint = ReceiptPrintModeType.POSPrinter;
             // Set application. Used for gift card & 3rd party payment
             r.Application = TerminalApplication.EFTPOS;
 

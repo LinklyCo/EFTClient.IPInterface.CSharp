@@ -1,14 +1,12 @@
-using System;
-
 namespace PCEFTPOS.EFTClient.IPInterface
 {
     /// <summary>A PC-EFTPOS terminal config merchant request object.</summary>
 	public class EFTConfigureMerchantRequest : EFTRequest
-	{
-		/// <summary>Constructs a default terminal configure request object.</summary>
-		public EFTConfigureMerchantRequest() : base(true, typeof(EFTConfigureMerchantResponse))
-		{
-		}
+    {
+        /// <summary>Constructs a default terminal configure request object.</summary>
+        public EFTConfigureMerchantRequest() : base(true, typeof(EFTConfigureMerchantResponse))
+        {
+        }
 
         /// <summary>Two digit merchant code</summary>
         /// <value>Type: <see cref="string"/><para>The default is "00"</para></value>
@@ -37,10 +35,10 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <remarks>Not support by most PIN pad terminals.</remarks>
         public int AIIC { get; set; } = 0;
 
-		/// <summary>The NII to configure the terminal with.</summary>
-		/// <value>Type: <see cref="System.Int32" /></value>
-		/// <remarks>Not support by most PIN pad terminals.</remarks>
-		public int NII { get; set; } = 0;
+        /// <summary>The NII to configure the terminal with.</summary>
+        /// <value>Type: <see cref="System.Int32" /></value>
+        /// <remarks>Not support by most PIN pad terminals.</remarks>
+        public int NII { get; set; } = 0;
 
         /// <summary>The bank response timeout specified in seconds.</summary>
         /// <value>Type: <see cref="System.Int32" /></value>
@@ -52,13 +50,13 @@ namespace PCEFTPOS.EFTClient.IPInterface
         public TerminalApplication Application { get; set; } = TerminalApplication.EFTPOS;
     }
 
-	/// <summary>A PC-EFTPOS terminal configure response object.</summary>
-	public class EFTConfigureMerchantResponse : EFTResponse
-	{
-		/// <summary>Constructs a default terminal configure response object.</summary>
-		public EFTConfigureMerchantResponse() : base(typeof(EFTConfigureMerchantRequest))
-		{
-		}
+    /// <summary>A PC-EFTPOS terminal configure response object.</summary>
+    public class EFTConfigureMerchantResponse : EFTResponse
+    {
+        /// <summary>Constructs a default terminal configure response object.</summary>
+        public EFTConfigureMerchantResponse() : base(typeof(EFTConfigureMerchantRequest))
+        {
+        }
 
         /// <summary>Two digit merchant code</summary>
         /// <value>Type: <see cref="string"/><para>The default is "00"</para></value>

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace PCEFTPOS.EFTClient.IPInterface
+﻿namespace PCEFTPOS.EFTClient.IPInterface
 {
     public static class StringBuilderExtension
     {

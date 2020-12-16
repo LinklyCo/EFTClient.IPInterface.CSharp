@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Security.Cryptography;
 using System.Text;
-using Newtonsoft.Json;
 
 namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
 {
@@ -15,7 +15,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
     public class CredentialLocker : ICredentialLocker
     {
         [JsonProperty]
-        private byte[] _entropy = new byte[20];
+        private readonly byte[] _entropy = new byte[20];
         private byte[] _decryptedData = new byte[0];
 
         [JsonProperty]
@@ -26,7 +26,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
         {
             get
             {
-                if( _decryptedData == null)
+                if (_decryptedData == null)
                 {
                     LoadCredentials();
                 }

@@ -42,12 +42,12 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>ip.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ICSharpCode.AvalonEdit, Version=6.0.0.0, Culture=neutral, PublicKeyToken=9cc39be672370310, processorArchitecture=MSIL">
-      <HintPath>..\packages\AvalonEdit.6.0.0\lib\net45\ICSharpCode.AvalonEdit.dll</HintPath>
-    </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
@@ -76,11 +76,19 @@
     <Compile Include="CredentialLocker.cs" />
     <Compile Include="DataWriter.cs" />
     <Compile Include="ExternalData.cs" />
-    <Compile Include="ViewModels\DialogUIHandler.cs" />
-    <Compile Include="ViewModels\EFTDisplayResponseVM.cs" />
-    <Compile Include="ViewModels\ProxyViewModel.cs" />
+    <Compile Include="ObservableCollectionExtension.cs" />
+    <Compile Include="Pad.cs" />
+    <Compile Include="ViewModel\EndPointViewModel.cs" />
+    <Compile Include="ViewModel\DialogUIHandler.cs" />
+    <Compile Include="ViewModel\EFTDisplayResponseVM.cs" />
+    <Compile Include="ViewModel\EndPointEditorViewModel.cs" />
+    <Compile Include="ViewModel\HistoryViewModel.cs" />
+    <Compile Include="ViewModel\ProxyViewModel.cs" />
     <Compile Include="Views\Converters.cs" />
-    <Compile Include="PadViewModel.cs" />
+    <Compile Include="ViewModel\PadViewModel.cs" />
+    <Compile Include="Views\EndpointEditor.xaml.cs">
+      <DependentUpon>EndpointEditor.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\TestDialogUI.xaml.cs">
       <DependentUpon>TestDialogUI.xaml</DependentUpon>
     </Compile>
@@ -88,6 +96,10 @@
       <DependentUpon>ProxyDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="RelayCommand.cs" />
+    <Page Include="Views\EndpointEditor.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Views\TestDialogUI.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -100,9 +112,9 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ViewModels\ClientData.cs" />
-    <Compile Include="ViewModels\ClientViewModel.cs" />
-    <Compile Include="ViewModels\EftWrapper.cs" />
+    <Compile Include="ViewModel\ClientData.cs" />
+    <Compile Include="ViewModel\ClientViewModel.cs" />
+    <Compile Include="ViewModel\EftWrapper.cs" />
     <Compile Include="Views\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -130,6 +142,9 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="packages.config" />
+    <None Include="ReleaseNotes.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IPInterface.UIInterfaceDemo\IPInterface.UIInterfaceDemo.csproj">
@@ -140,6 +155,13 @@
       <Project>{3de3ff35-5303-41f0-9f66-5b5ab2b6b7df}</Project>
       <Name>IPInterface</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Views\Linkly_logo_WHITEv2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="ip.ico" />
+    <Resource Include="Views\favicon.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

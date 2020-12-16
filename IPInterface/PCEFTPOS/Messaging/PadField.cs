@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 
 namespace PCEFTPOS.EFTClient.IPInterface
 {
@@ -24,11 +25,25 @@ namespace PCEFTPOS.EFTClient.IPInterface
             Name = name;
             Data = data;
         }
+
+        /// <summary>
+        /// Gets readable string from Pad Tag
+        /// </summary>
+        /// <returns>[Name][Data.Len][Data} e.g. TST003TAG</returns>
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            var name = Name + "   ";
+            sb.Append(PadField.Substring(name, 0, 3));
+            sb.Append(Data.Length.ToString().PadLeft(3, '0'));
+            sb.Append(Data);
+            return sb.ToString();
+        }
     }
 
-    public class PadField: IList<PadTag>
+    public class PadField : IList<PadTag>
     {
-        List<PadTag> tags = new List<PadTag>();
+        readonly List<PadTag> tags = new List<PadTag>();
 
         public int Count => ((IList<PadTag>)tags).Count;
 
@@ -49,14 +64,14 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 SetFromString(data, false);
         }
 
-        int AsInt(string s, int defaultValue)
+        static int AsInt(string s, int defaultValue)
         {
-            if (!Int32.TryParse(s, out int r))
+            if (!int.TryParse(s, out int r))
                 r = defaultValue;
             return r;
         }
 
-        string Substring(string s, int startIndex, int length)
+        internal static string Substring(string s, int startIndex, int length)
         {
             if (s == null || s.Length <= startIndex)
                 return "";
@@ -112,21 +127,33 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         public string GetAsString(bool lenhdr)
         {
-            String name, result = "";
-            int i = 0;
-
-            while (i < tags.Count)
+            var sb = new StringBuilder();
+            foreach(var t in tags)
             {
-                name = tags[i].Name + "   ";
-
-                result += Substring(name, 0, 3);
-                result += tags[i].Data.Length.ToString().PadLeft(3, '0');
-                result += tags[i].Data;
-                i++;
+                sb.Append(t.ToString());
             }
             if (lenhdr)
-                return result.Length.ToString().PadLeft(3, '0') + result;
-            return result;
+            {
+                sb.Insert(0, sb.Length.ToString().PadLeft(3, '0'));
+            }
+
+            return sb.ToString();
+        }
+
+        public string ToFormattedString()
+        {
+            var sb = new StringBuilder();
+            for(int i = 0; i < tags.Count; i++)
+            {
+                sb.Append(tags[i].ToString());
+                
+                if(i < tags.Count-1)
+                { 
+                    sb.Append(Environment.NewLine);
+                }
+            }
+
+            return sb.ToString();
         }
 
         public int FindTag(string name)
@@ -224,6 +251,21 @@ namespace PCEFTPOS.EFTClient.IPInterface
         public bool Contains(PadTag item)
         {
             return ((IList<PadTag>)tags).Contains(item);
+        }
+
+        /// <summary>
+        /// Checks whether PadField contains a specific pad tag
+        /// </summary>
+        /// <param name="item">PAD tag e.g. TST003TAG</param>
+        /// <returns>true if PAD tag found. Otherwise false</returns>
+        public bool Contains(string item)
+        {
+            foreach (PadTag tag in tags)
+            {
+                if (tag.ToString().Equals(item))
+                    return true;
+            }
+            return false;
         }
 
         public void CopyTo(PadTag[] array, int arrayIndex)

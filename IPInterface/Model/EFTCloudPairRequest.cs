@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace PCEFTPOS.EFTClient.IPInterface
+﻿namespace PCEFTPOS.EFTClient.IPInterface
 {
     /// <summary>A PC-EFTPOS cloud pairing request object.</summary>
     public class EFTCloudPairRequest : EFTRequest
@@ -42,14 +40,6 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <summary>Response text for the call</summary>
         /// <value>Type: <see cref="System.String" /></value>
         public string ResponseText { get; set; } = "";
-
-        /// <summary>Redirect Port that the POS should connect to after making the pairing request</summary>
-        /// <value>Type: <see cref="System.String" /></value>
-        public int RedirectPort { get; set; } = 443;
-
-        /// <summary>Redirect Address that the POS should connect to after making the pairing request</summary>
-        /// <value>Type: <see cref="System.String" /></value>
-        public string RedirectAddress { get; set; } = "";
 
         /// <summary>Response Token used by the POS for subsequent Cloud Calls</summary>
         /// <value>Type: <see cref="System.String" /></value>

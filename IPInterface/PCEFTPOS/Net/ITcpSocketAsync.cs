@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace PCEFTPOS.EFTClient.IPInterface
 {
-    public interface ITcpSocketAsync: IDisposable
+    public interface ITcpSocketAsync : IDisposable
     {
         /// <summary>
         /// Connect to the EFT-Client (async) via TCP/IP.

@@ -2,31 +2,48 @@ namespace PCEFTPOS.EFTClient.IPInterface
 {
     /// <summary>EFTPOS settlement types.</summary>
 	public enum SettlementType
-	{
-		/// <summary>Perform a settlement on the terminal.</summary>
+    {
+        [Description("Settlement ('S')")]
+        /// <summary>Perform a settlement on the terminal.</summary>
 		/// <remarks>Can only be performed once per day.</remarks>
 		Settlement = 'S',
-		/// <summary>Perform a pre-settlement on the terminal.</summary>
+
+        [Description("Pre-settlement ('P')")]
+        /// <summary>Perform a pre-settlement on the terminal.</summary>
 		/// <remarks>Not supported by all PIN pads.</remarks>
 		PreSettlement = 'P',
-		/// <summary>Perform a last settlement on the terminal.</summary>
+
+        [Description("Last Settlement ('L')")]
+        /// <summary>Perform a last settlement on the terminal.</summary>
 		/// <remarks>Not supported by all PIN pads.</remarks>
 		LastSettlement = 'L',
-		/// <summary>Perform a summary totals on the terminal.</summary>
+
+        [Description("Summary Totals ('U')")]
+        /// <summary>Perform a summary totals on the terminal.</summary>
 		/// <remarks>Not supported by all PIN pads.</remarks>
 		SummaryTotals = 'U',
-		/// <summary>Perform a shift/sub totals on the terminal.</summary>
+
+        [Description("Sub Shift Totals ('H')")]
+        /// <summary>Perform a shift/sub totals on the terminal.</summary>
 		/// <remarks>Not supported by all PIN pads.</remarks>
 		SubShiftTotals = 'H',
-		/// <summary>Peform a transaction listing on the terminal.</summary>
+
+        [Description("Detailed Transaction Listing ('I')")]
+        /// <summary>Peform a transaction listing on the terminal.</summary>
 		/// <remarks>Not supported by all PIN pads.</remarks>
 		DetailedTransactionListing = 'I',
+
+        [Description("Start Cash ('M')")]
         /// <summary>Start cash</summary>
         /// <remarks>Not supported by all PIN pads.</remarks>
         StartCash = 'M',
+
+        [Description("Store and Forward Totals ('F')")]
         /// <summary>SAF report</summary>
         /// <remarks>Not supported by all PIN pads.</remarks>
         StoreAndForwardTotals = 'F',
+
+        [Description("Daily Cash Statement ('D')")]
         /// <summary>Daily cash</summary>
         /// <remarks>StGeorge agency only.</remarks>
         DailyCashStatement = 'D'
@@ -36,7 +53,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
     public class SettlementCardTotals
     {
         /// <summary>Constructs a default settlement card totals object.</summary>
-        public SettlementCardTotals() 
+        public SettlementCardTotals()
         {
         }
 
@@ -77,63 +94,63 @@ namespace PCEFTPOS.EFTClient.IPInterface
         public decimal TotalAmount { get; set; } = 0.0M;
     }
 
-	/// <summary>EFTPOS settlement totals data.</summary>
-	public class SettlementTotals
-	{
+    /// <summary>EFTPOS settlement totals data.</summary>
+    public class SettlementTotals
+    {
 
-		/// <summary>Constructs a default settlement totals object.</summary>
-		public SettlementTotals(): base()
-		{
-		}
+        /// <summary>Constructs a default settlement totals object.</summary>
+        public SettlementTotals() : base()
+        {
+        }
 
-		/// <summary>Settlement totals description.</summary>
-		/// <value>Type: <see cref="System.String" /></value>
-		public string TotalsDescription { get; set; } = "";
+        /// <summary>Settlement totals description.</summary>
+        /// <value>Type: <see cref="System.String" /></value>
+        public string TotalsDescription { get; set; } = "";
 
-		/// <summary>Count of purchases transactions made.</summary>
-		/// <value>Type: <see cref="System.Int32" /></value>
-		public int PurchaseCount { get; set; } = 0;
+        /// <summary>Count of purchases transactions made.</summary>
+        /// <value>Type: <see cref="System.Int32" /></value>
+        public int PurchaseCount { get; set; } = 0;
 
-		/// <summary>Total of purchases transactions made.</summary>
-		/// <value>Type: <see cref="System.Decimal" /></value>
-		public decimal PurchaseAmount { get; set; } = 0.0M;
+        /// <summary>Total of purchases transactions made.</summary>
+        /// <value>Type: <see cref="System.Decimal" /></value>
+        public decimal PurchaseAmount { get; set; } = 0.0M;
 
-		/// <summary>Count of cash out transactions made.</summary>
-		/// <value>Type: <see cref="System.Int32" /></value>
-		public int CashOutCount { get; set; } = 0;
+        /// <summary>Count of cash out transactions made.</summary>
+        /// <value>Type: <see cref="System.Int32" /></value>
+        public int CashOutCount { get; set; } = 0;
 
-		/// <summary>Total of cash out transactions made.</summary>
-		/// <value>Type: <see cref="System.Decimal" /></value>
-		public decimal CashOutAmount { get; set; } = 0.0M;
+        /// <summary>Total of cash out transactions made.</summary>
+        /// <value>Type: <see cref="System.Decimal" /></value>
+        public decimal CashOutAmount { get; set; } = 0.0M;
 
-		/// <summary>Count of refund transactions made.</summary>
-		/// <value>Type: <see cref="System.Int32" /></value>
-		public int RefundCount { get; set; } = 0;
+        /// <summary>Count of refund transactions made.</summary>
+        /// <value>Type: <see cref="System.Int32" /></value>
+        public int RefundCount { get; set; } = 0;
 
-		/// <summary>Total of refund transactions made.</summary>
-		/// <value>Type: <see cref="System.Decimal" /></value>
-		public decimal RefundAmount { get; set; } = 0.0M;
+        /// <summary>Total of refund transactions made.</summary>
+        /// <value>Type: <see cref="System.Decimal" /></value>
+        public decimal RefundAmount { get; set; } = 0.0M;
 
-		/// <summary>Count of all transactions made.</summary>
-		/// <value>Type: <see cref="System.Int32" /></value>
-		public int TotalCount { get; set; } = 0;
+        /// <summary>Count of all transactions made.</summary>
+        /// <value>Type: <see cref="System.Int32" /></value>
+        public int TotalCount { get; set; } = 0;
 
-		/// <summary>Total of all transactions made.</summary>
-		/// <value>Type: <see cref="System.Decimal" /></value>
-		public decimal TotalAmount { get; set; } = 0.0M;
+        /// <summary>Total of all transactions made.</summary>
+        /// <value>Type: <see cref="System.Decimal" /></value>
+        public decimal TotalAmount { get; set; } = 0.0M;
 
-		/// <summary>Extra settlement totals data.</summary>
-		/// <value>Type: <see cref="System.String" /></value>
-		public string Extra { get; set; } = "";
-	}
+        /// <summary>Extra settlement totals data.</summary>
+        /// <value>Type: <see cref="System.String" /></value>
+        public string Extra { get; set; } = "";
+    }
 
-	/// <summary>A PC-EFTPOS terminal settlement request object.</summary>
-	public class EFTSettlementRequest : EFTRequest
-	{
-    	/// <summary>Constructs a default terminal settlement request object.</summary>
-		public EFTSettlementRequest(): base(true, typeof(EFTSettlementResponse))
-		{
-		}
+    /// <summary>A PC-EFTPOS terminal settlement request object.</summary>
+    public class EFTSettlementRequest : EFTRequest
+    {
+        /// <summary>Constructs a default terminal settlement request object.</summary>
+        public EFTSettlementRequest() : base(true, typeof(EFTSettlementResponse))
+        {
+        }
 
         /// <summary>Two digit merchant code</summary>
         /// <value>Type: <see cref="string"/><para>The default is "00"</para></value>
@@ -165,27 +182,27 @@ namespace PCEFTPOS.EFTClient.IPInterface
         public ReceiptPrintModeType ReceiptPrintMode { get { return ReceiptAutoPrint; } set { ReceiptAutoPrint = value; } }
 
         /// <summary>Indicates whether PC-EFTPOS should cut receipts.</summary>
-        /// <value>Type: <see cref="ReceiptCutModeType"/><para>The default is DontCut. This property only applies when <see cref="EFTRequest.ReceiptPrintMode"/> is set to EFTClientPrinter.</para></value>
+        /// <value>Type: <see cref="ReceiptCutModeType"/><para>The default is DontCut. This property only applies when <see cref="ReceiptPrintMode"/> is set to EFTClientPrinter.</para></value>
         public ReceiptCutModeType CutReceipt { get; set; } = ReceiptCutModeType.DontCut;
 
         /// <summary>Indicates whether PC-EFTPOS should cut receipts.</summary>
-        /// <value>Type: <see cref="ReceiptCutModeType"/><para>The default is DontCut. This property only applies when <see cref="EFTRequest.ReceiptPrintMode"/> is set to EFTClientPrinter.</para></value>
+        /// <value>Type: <see cref="ReceiptCutModeType"/><para>The default is DontCut. This property only applies when <see cref="ReceiptPrintMode"/> is set to EFTClientPrinter.</para></value>
         [System.Obsolete("Please use CutReceipt instead of ReceiptCutMode")]
         public ReceiptCutModeType ReceiptCutMode { get { return CutReceipt; } set { CutReceipt = value; } }
     }
 
-	/// <summary>A PC-EFTPOS terminal settlement response object.</summary>
-	public class EFTSettlementResponse : EFTResponse
-	{
-		//List<SettlementCardTotals> settleCardData;
-		//SettlementTotals totalsData;
+    /// <summary>A PC-EFTPOS terminal settlement response object.</summary>
+    public class EFTSettlementResponse : EFTResponse
+    {
+        //List<SettlementCardTotals> settleCardData;
+        //SettlementTotals totalsData;
 
-		/// <summary>Constructs a default terminal settlement response object.</summary>
-		public EFTSettlementResponse() : base(typeof(EFTSettlementRequest))
-		{
-			//settleCardData = new List<SettlementCardTotals>();
-			//totalsData = new SettlementTotals();
-		}
+        /// <summary>Constructs a default terminal settlement response object.</summary>
+        public EFTSettlementResponse() : base(typeof(EFTSettlementRequest))
+        {
+            //settleCardData = new List<SettlementCardTotals>();
+            //totalsData = new SettlementTotals();
+        }
 
         /// <summary>Two digit merchant code</summary>
         /// <value>Type: <see cref="string"/><para>The default is "00"</para></value>

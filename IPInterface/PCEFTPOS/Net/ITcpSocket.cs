@@ -1,29 +1,24 @@
 ﻿using System;
-using System.Threading.Tasks;
 
 namespace PCEFTPOS.EFTClient.IPInterface
 {
     /// <exclude/>
-    class TcpSocketException : Exception
+    public class TcpSocketException : Exception
     {
-        TcpSocketExceptionType _exceptionType;
 
         /// <exclude/>
         public TcpSocketException(TcpSocketExceptionType ExceptionType, string Message)
             : base(Message)
         {
-            _exceptionType = ExceptionType;
+            this.ExceptionType = ExceptionType;
         }
 
         /// <exclude/>
-        public TcpSocketExceptionType ExceptionType
-        {
-            get { return _exceptionType; }
-        }
+        public TcpSocketExceptionType ExceptionType { get; private set; }
     }
 
     /// <exclude/>
-    enum TcpSocketExceptionType
+    public enum TcpSocketExceptionType
     {
         /// <exclude/>
         ConnectException,
@@ -36,21 +31,16 @@ namespace PCEFTPOS.EFTClient.IPInterface
     }
 
     /// <exclude/>
-    class TcpSocketEventArgs : EventArgs
+    public class TcpSocketEventArgs : EventArgs
     {
-        TcpSocketExceptionType _ExceptionType;
-        string _Error;
-        byte[] _Bytes;
-        string _Message;
-
         /// <exclude/>
-        public string Error { get { return _Error; } set { _Error = value; } }
+        public string Error { get; set; }
         /// <exclude/>
-        public TcpSocketExceptionType ExceptionType { get { return _ExceptionType; } set { _ExceptionType = value; } }
+        public TcpSocketExceptionType ExceptionType { get; set; }
         /// <exclude/>
-        public byte[] Bytes { get { return _Bytes; } set { _Bytes = value; } }
+        public byte[] Bytes { get; set; }
         /// <exclude/>
-        public string Message { get { return _Message; } set { _Message = value; } }
+        public string Message { get; set; }
     }
 
     /// <exclude/>
@@ -59,7 +49,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
     /// <summary>
     /// Defines the socket interface used by EFTClientIP
     /// </summary>
-    interface ITcpSocket: IDisposable
+    interface ITcpSocket : IDisposable
     {
         event TcpSocketEventHandler OnDataWaiting;
         event TcpSocketEventHandler OnTerminated;

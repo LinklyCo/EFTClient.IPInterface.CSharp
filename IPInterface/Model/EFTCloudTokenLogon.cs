@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace PCEFTPOS.EFTClient.IPInterface
+﻿namespace PCEFTPOS.EFTClient.IPInterface
 {
     /// <summary>A PC-EFTPOS cloud logon request object.</summary>
     public class EFTCloudTokenLogonRequest : EFTRequest

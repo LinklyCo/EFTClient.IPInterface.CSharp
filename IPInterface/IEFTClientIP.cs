@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace PCEFTPOS.EFTClient.IPInterface
 {
-    public interface IEFTClientIP: IDisposable
+    public interface IEFTClientIP : IDisposable
     {
         #region Properties
 

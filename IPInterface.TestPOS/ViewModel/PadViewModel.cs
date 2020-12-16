@@ -1,13 +1,58 @@
 ﻿
 using Newtonsoft.Json;
-using System.ComponentModel;
-using System.IO;
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.IO;
 using System.Linq;
 
-namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
+namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 {
+
+
+    public class PadTagViewModel : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void NotifyPropertyChanged(string info)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(info));
+        }
+
+        private string name = string.Empty;
+        public string Name
+        {
+            get
+            {
+                return name;
+            }
+            set
+            {
+                name = value;
+                NotifyPropertyChanged(nameof(Name));
+            }
+        }
+
+        private string data = string.Empty;
+        public string Data
+        {
+            get
+            {
+                return data;
+            }
+            set
+            {
+                data = value;
+                NotifyPropertyChanged(nameof(Data));
+            }
+        }
+
+        public override string ToString()
+        {
+            return $"{name}{data.Length.ToString().PadLeft(3, '0')}{data}";
+        }
+    }
+
     public class PadViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
@@ -17,7 +62,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(info));
         }
 
-        string _filename = "temp.json";
+        readonly string _filename = "temp.json";
         ExternalDataList _items = new ExternalDataList();
         public ExternalDataList UpdatedExternalData
         {
@@ -34,8 +79,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
         }
 
+
+        public ObservableCollection<PadTagViewModel> PadTags { get; set; } = new ObservableCollection<PadTagViewModel>();
         public ObservableCollection<ExternalData> PadContentList { get; set; } = new ObservableCollection<ExternalData>();
-        public ObservableCollection<FieldTag> PadFieldList { get; set; } = new ObservableCollection<FieldTag>();
 
         string _padName = string.Empty;
         public string PadName
@@ -62,6 +108,16 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             {
                 _padValue = value;
                 NotifyPropertyChanged("PadValue");
+            }
+        }
+
+        public string PadValueDisplay
+        {
+            get => PadValue.ToVisibleSpaces();
+            set
+            {
+                PadValue = value.FromVisibleSpaces();
+                NotifyPropertyChanged("PadValueDisplay");
             }
         }
 
@@ -107,6 +163,34 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
         }
 
+        bool _dataButtonVisible = true;
+        public bool DataButtonVisible
+        {
+            get
+            {
+                return _dataButtonVisible;
+            }
+            set
+            {
+                _dataButtonVisible = value;
+                NotifyPropertyChanged("DataButtonVisible");
+            }
+        }
+
+        string _collectionName = "PAD Tag Collection";
+        public string CollectionName
+        {
+            get
+            {
+                return _collectionName;
+            }
+            set
+            {
+                _collectionName = value;
+                NotifyPropertyChanged("CollectionName");
+            }
+        }
+
         int _currentPadIndex = -1;
 
         public PadViewModel(string filename)
@@ -146,7 +230,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
                     _items.AddRange(list);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 System.Diagnostics.Trace.WriteLine(ex.Message);
             }
@@ -173,10 +257,10 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             if (string.IsNullOrEmpty(PadTagName))
                 return false;
 
-            if (PadFieldList.ToList().Exists(x => x.Name.Equals(PadTagName)))
+            if (PadTags.ToList().Exists(x => x.Name.Equals(PadTagName)))
                 return false;
-            
-            PadFieldList.Add(new FieldTag(PadTagName, PadTagValue));
+
+            PadTags.Add(new PadTagViewModel() { Name = PadTagName, Data = PadTagValue });
             PadTagName = string.Empty;
             PadTagValue = string.Empty;
 
@@ -190,7 +274,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
 
             PadContentList[index].Name = PadName;
             PadContentList[index].Value = PadValue;
-            PadContentList[index].Fields.Clear();
 
             return true;
         }
@@ -200,8 +283,8 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             if (string.IsNullOrEmpty(PadTagName) || index < 0)
                 return false;
 
-            PadFieldList[index].Name = PadTagName;
-            PadFieldList[index].Data = PadTagValue;
+            PadTags[index].Name = PadTagName;
+            PadTags[index].Data = PadTagValue;
             return true;
         }
 
@@ -235,7 +318,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
                     if (index < 0)
                         return;
 
-                    PadFieldList.RemoveAt(index);
+                    PadTags.RemoveAt(index);
 
                     PadTagName = string.Empty;
                     PadTagValue = string.Empty;
@@ -252,7 +335,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
                     if (string.IsNullOrEmpty(PadName))
                         return;
 
-                    PadFieldList.Add(new FieldTag() { Name = PadName, Data = PadValue });
+                    PadTags.Add(new PadTagViewModel() { Name = PadName, Data = PadValue });
 
                     PadName = string.Empty;
                     PadValue = string.Empty;
@@ -273,16 +356,18 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
                     if (_currentPadIndex < 0)
                         return;
 
-                    PadFieldList.Clear();
+                    PadTags.Clear();
                     PadTagName = string.Empty;
                     PadTagValue = string.Empty;
 
-                    if (PadContentList[_currentPadIndex].Fields != null)
+                    var externalData = PadContentList[_currentPadIndex];
+
+                    PadTags.Clear();
+
+                    var pt = new PadField(externalData?.Value);
+                    foreach (var pf in pt)
                     {
-                        PadContentList[_currentPadIndex].Fields.ForEach(x =>
-                        {
-                            PadFieldList.Add(new FieldTag(x.Name, x.Data));
-                        });
+                        PadTags.Add(new PadTagViewModel() { Name = pf.Name, Data = pf.Data });
                     }
 
                     EditMode = true;
@@ -296,14 +381,16 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
                 return false;
 
             var value = string.Empty;
-            PadFieldList.ToList().ForEach(x => value += x.Name + x.Data);
 
-            PadContentList[_currentPadIndex].Value = value;
-            PadContentList[_currentPadIndex].Fields.Clear();
-            PadContentList[_currentPadIndex].Fields.AddRange(PadFieldList);
 
-            PadValue = value;
+            // Convert ObservableCollection<PadTagViewModel> into PadField
+            var pf = new PadField();
+            foreach (var p in PadTags)
+            {
+                pf.Add(new PadTag(p.Name, p.Data));
+            }
 
+            PadContentList[_currentPadIndex].Value = pf.GetAsString(false);
             EditMode = false;
 
             return true;

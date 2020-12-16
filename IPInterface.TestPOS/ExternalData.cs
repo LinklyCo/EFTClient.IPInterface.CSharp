@@ -45,8 +45,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
         }
 
-        public PadFields Fields { get; set; } = new PadFields();
-
         public string Error
         {
             get
@@ -114,7 +112,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
 
         public override string ToString()
         {
-            return $"{Name} | {Data}"; 
+            return $"{Name} | {Data}";
         }
     }
 
@@ -135,7 +133,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
     public class CloudData
     {
         public bool IsAutoLogin { get; set; } = false;
-        
+
         public string ClientId { get; set; } = "";
         public string PairingCode { get; set; } = "";
         public bool PairLogon { get; set; } = false;
@@ -169,9 +167,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
     public class UserSettings
     {
         public CloudData CloudInfo { get; set; } = new CloudData();
-        public bool IsSettingsShown { get; set; } = true;
         public bool IsUtilitiesShown { get; set; } = true;
         public bool IsLogShown { get; set; } = true;
+        public bool IsWoolworthsPOS { get; set; } = false;
         public DemoDialogMode DemoDialogOption { get; set; } = DemoDialogMode.Hide;
 
         public string Host { get; set; } = "127.0.0.1";
@@ -179,12 +177,18 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
         [JsonIgnore]
         public bool UseSSL { get; set; } = false;
         public string Notes { get; set; } = string.Empty;
+        public int PrintMode { get; set; }
     }
 
     public enum DemoDialogMode
     {
+        [Description("Always show")]
         AlwaysShow,
+
+        [Description("Show on responses")]
         ShowOnEvents,
+
+        [Description("Never show")]
         Hide
     }
 }

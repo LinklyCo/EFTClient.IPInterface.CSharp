@@ -1,25 +1,23 @@
-using System;
-
 namespace PCEFTPOS.EFTClient.IPInterface
 {
     /// <summary>Indicates if the type of cheque authorization to perform.</summary>
 	public enum ChequeType
-	{
-		/// <summary>Business guarantee authorization.</summary>
-		BusinessGuarantee = '0',
-		/// <summary>Personal guarantee authorization.</summary>
-		PersonalGuarantee = '1',
-		/// <summary>Personal guarantee authorization.</summary>
-		PersonalAppraisal = '2',
-	}
+    {
+        /// <summary>Business guarantee authorization.</summary>
+        BusinessGuarantee = '0',
+        /// <summary>Personal guarantee authorization.</summary>
+        PersonalGuarantee = '1',
+        /// <summary>Personal guarantee authorization.</summary>
+        PersonalAppraisal = '2',
+    }
 
-	/// <summary>A PC-EFTPOS cheque authorization request object.</summary>
-	public class EFTChequeAuthRequest : EFTRequest
-	{
-		/// <summary>Constructs a default ChequeAuthRequest object.</summary>
-		public EFTChequeAuthRequest() : base(true, typeof(EFTChequeAuthResponse))
-		{
-		}
+    /// <summary>A PC-EFTPOS cheque authorization request object.</summary>
+    public class EFTChequeAuthRequest : EFTRequest
+    {
+        /// <summary>Constructs a default ChequeAuthRequest object.</summary>
+        public EFTChequeAuthRequest() : base(true, typeof(EFTChequeAuthResponse))
+        {
+        }
 
         /// <summary>Two digit merchant code</summary>
         /// <value>Type: <see cref="string"/><para>The default is "00"</para></value>
@@ -54,21 +52,18 @@ namespace PCEFTPOS.EFTClient.IPInterface
         public TerminalApplication Application { get; set; } = TerminalApplication.EFTPOS;
     }
 
-	/// <summary>A PC-EFTPOS cheque authorization response object.</summary>
-	public class EFTChequeAuthResponse : EFTResponse
-	{
-		decimal amount;
-		int authNumber;
-		string txnRefNum;
+    /// <summary>A PC-EFTPOS cheque authorization response object.</summary>
+    public class EFTChequeAuthResponse : EFTResponse
+    {
 
-		/// <summary>Constructs a default cheque authorization response object.</summary>
-		public EFTChequeAuthResponse()
-			: base(typeof(EFTChequeAuthRequest))
-		{
-			amount = 0;
-			authNumber = 0;
-			txnRefNum = "";
-		}
+        /// <summary>Constructs a default cheque authorization response object.</summary>
+        public EFTChequeAuthResponse()
+            : base(typeof(EFTChequeAuthRequest))
+        {
+            Amount = 0;
+            AuthNumber = 0;
+            ReferenceNumber = "";
+        }
 
         /// <summary>Two digit merchant code</summary>
         /// <value>Type: <see cref="string"/><para>The default is "00"</para></value>
@@ -76,27 +71,15 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>The authorization amount for the cheque.</summary>
         /// <value>Type: <see cref="System.Decimal"/><para>Echoed from the request.</para></value>
-        public decimal Amount
-		{
-			get { return amount; }
-			set { amount = value; }
-		}
+        public decimal Amount { get; set; }
 
-		/// <summary>The authorization number for this authorization.</summary>
-		/// <value>Type: <see cref="System.Int32"/><para>The authorization number returned from the cheque authorization host.</para></value>
-		public int AuthNumber
-		{
-			get { return authNumber; }
-			set { authNumber = value; }
-		}
+        /// <summary>The authorization number for this authorization.</summary>
+        /// <value>Type: <see cref="System.Int32"/><para>The authorization number returned from the cheque authorization host.</para></value>
+        public int AuthNumber { get; set; }
 
-		/// <summary>The reference number attached to the authorization.</summary>
-		/// <value>Type: <see cref="System.String"/><para>Echoed from the request.</para></value>
-		public string ReferenceNumber
-		{
-			get { return txnRefNum; }
-			set { txnRefNum = value; }
-		}
+        /// <summary>The reference number attached to the authorization.</summary>
+        /// <value>Type: <see cref="System.String"/><para>Echoed from the request.</para></value>
+        public string ReferenceNumber { get; set; }
 
         /// <summary>Indicates if the request was successful.</summary>
         /// <value>Type: <see cref="System.Boolean"/></value>

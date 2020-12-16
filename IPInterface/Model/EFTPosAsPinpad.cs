@@ -1,10 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Dynamic;
-using System.Linq;
-using System.Text;
-using System.Xml.Linq;
 using System.Xml.Serialization;
 
 namespace PCEFTPOS.EFTClient.IPInterface
@@ -269,11 +264,6 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// </summary>
         [XmlElement("AppType")]
         public string ApplicationType { get; set; } = string.Empty;
-
-        /// <summary>
-        /// The color of the button to display.
-        /// </summary>
-        //public Color ButtonColour { get; set; } = Color.DarkGray;
 
         ///<summary>
         ///URL to go to if this is pressed. Never returns to the DLL.
