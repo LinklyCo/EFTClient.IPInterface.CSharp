@@ -42,6 +42,6 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Receipt response is a pre-print.</summary>
         /// <value>Type: <see cref="System.Boolean" /></value>
-        public bool IsPrePrint => (Type != ReceiptType.ReceiptText);
+        public bool IsPrePrint { get; set; }
     }
 }

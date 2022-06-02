@@ -44,12 +44,12 @@ namespace PCEFTPOS.EFTClient.IPInterface
     }
 
     /// <exclude/>
-    delegate void TcpSocketEventHandler(object sender, TcpSocketEventArgs e);
+    public delegate void TcpSocketEventHandler(object sender, TcpSocketEventArgs e);
 
     /// <summary>
     /// Defines the socket interface used by EFTClientIP
     /// </summary>
-    interface ITcpSocket : IDisposable
+    public interface ITcpSocket : IDisposable
     {
         event TcpSocketEventHandler OnDataWaiting;
         event TcpSocketEventHandler OnTerminated;

@@ -110,12 +110,17 @@
 
             <WrapPanel Margin="4" Style="{StaticResource CloudPairingWrapPanelVisibility}">
                 <Label Content="Token:" Width="96"/>
-                <TextBox x:Name="txtToken" Width="384" VerticalContentAlignment="Center" IsEnabled="False" Text="{Binding CurrentItem.Token, Mode=TwoWay}"/>
-                <Button x:Name="BtnPairPinpad" Content="Pair PINpad" Width="80" Height="32" Margin="4" Click="BtnPairPinpad_Click"/>                
+                <TextBox x:Name="txtToken" Width="384" VerticalContentAlignment="Center" IsReadOnly="True" Text="{Binding CurrentItem.Token, Mode=TwoWay}" Foreground="Gray"/>
+                <Button x:Name="BtnPairPinpad" Content="Pair PINpad" Width="80" Height="32" Margin="4" Click="BtnPairPinpad_Click"/>
+                <Button x:Name="BtnUnpair" Content="Unpair" Width="80" Height="32" Margin="4" Click="BtnUnpair_Click" IsEnabled="{Binding ElementName=txtToken,Path=Text.Length}"/>
             </WrapPanel>
 
         </StackPanel>
 
-        <Button x:Name="BtnSave" Grid.Row="2" Grid.Column="1" Content="Save" Width="80" Height="32" HorizontalAlignment="Right" Margin="4" Click="BtnSave_Click"/>
+        <WrapPanel Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right">
+            <Button x:Name="BtnApply" Content="Apply" Width="80" Height="32" Margin="4" Click="BtnApply_Click"/>
+            <Button x:Name="BtnCancel" Content="Cancel" Width="80" Height="32" Margin="4" Click="BtnCancel_Click"/>
+            <Button x:Name="BtnOk" Content="OK" Width="80" Height="32" Margin="4" Click="BtnOK_Click"/>
+        </WrapPanel>
     </Grid>
 </Window>

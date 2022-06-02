@@ -57,7 +57,9 @@
     {
         public static AccountType FromString(this AccountType _, string s)
         {
-            if (s.ToUpper().TrimEnd() == "CREDIT")
+            if (s == null)
+                return AccountType.Default;
+            else if (s.ToUpper().TrimEnd() == "CREDIT")
                 return AccountType.Credit;
             else if (s.ToUpper().TrimEnd() == "SAVINGS")
                 return AccountType.Savings;

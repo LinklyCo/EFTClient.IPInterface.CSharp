@@ -1,12 +1,16 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 {
@@ -20,11 +24,14 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         const string ENDPOINTS_FILENAME = "endpoints.json";
         readonly EftWrapper eftw = null;
         ProxyDialog proxy = new ProxyDialog();
+        private MainWindow _parent;
 
         public event LogEvent OnLog;
 
-        public ClientViewModel()
+        public ClientViewModel(MainWindow parent)
         {
+            _parent = parent;
+
             // initialize external data
             Data.Track2Items  = PadEditor.GetData(TRACK2_FILENAME);
             Data.PadItems     = PadEditor.GetData(QPAD_FILENAME);
@@ -41,7 +48,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 PadEditor.AddData(SLAVE_CMD_FILENAME, new ExternalData("Display 'Swipe Card'", "*@103Z 0060220  D 0240000   SWIPE CARD       D 0240100                    "));
                 PadEditor.AddData(SLAVE_CMD_FILENAME, new ExternalData("Swipe Card", "*@102J1000K100810000010"));
                 PadEditor.AddData(SLAVE_CMD_FILENAME, new ExternalData("Exit Slave Mode", "*@101S0000"));
-                Data.CommandsList = PadEditor.AddData(SLAVE_CMD_FILENAME, new ExternalData("Complete Read Card Command", "*@107S1004300 Z 0060216  D 0240000   SWIPE CARD       D 0240100                    J1000K100810000010S0000"));
+                Data.CommandsList = PadEditor.AddData(SLAVE_CMD_FILENAME, new ExternalData("Complete Read Card Command", "*@106S1004300 Z 0060216  D 0240000   SWIPE CARD       D 0240100                    J1000K100810000010"));
             }
 
             // load endpoints from file //
@@ -68,6 +75,23 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         private async void ProxyVM_OnSendKey(object sender, EFTSendKeyRequest e)
         {
+            if (Data.Settings.IsWoolworthsPOS)
+            {
+                if (e.Key == EFTPOSKey.Authorise)
+                {
+                    if (e.Data[0] == 'B')
+                    {
+                        e.Key = EFTPOSKey.Barcode;
+                        e.Data = e.Data.Substring(1);
+                    }
+                    else if (e.Data[0] == 'K')
+                    {
+                        e.Key = EFTPOSKey.Keyed;
+                        e.Data = e.Data.Substring(1);
+                    }
+                }  
+            }
+         
             await eftw.SendKey(e.Key, e.Data);
         }
 
@@ -113,7 +137,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             {
                 return new RelayCommand((o) =>
                 {
-                    Data.LastTxnType = null;
+                    Data.LastTxnRespType = null;
                     Data.LastTxnResult = new Dictionary<string, string>();
                 });
             }
@@ -165,7 +189,10 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                     string request = eftw.requestInProgressString;
                     if (MessageBox.Show($"Abandon in progress '{request}'?", $"Abandon '{request}'?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                     {
-                        _ = eftw.SendKey(EFTPOSKey.OkCancel);
+                        if (eftw.InSlaveMode)
+                            _ = eftw.DoSlaveMode(SLAVE_MODE_EXIT);
+                        else
+                            _ = eftw.SendKey(EFTPOSKey.OkCancel);
                         eftw.requestInProgress = null;
                     }
                 });
@@ -174,17 +201,27 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         public RelayCommand ClearHistoryCommand => new RelayCommand(o => Data.MessageHistory.Clear());
 
+        public RelayCommand SaveLogCommand => new RelayCommand(o =>
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            if(saveFileDialog.ShowDialog().GetValueOrDefault())
+            {
+                File.WriteAllText(saveFileDialog.FileName, Data.LogMessages);
+            }
+        });
+        public RelayCommand ClearLogCommand => new RelayCommand(o => Data.LogMessages = string.Empty);
+
         #endregion
 
         #region Connection
-        public async Task<bool> ConnectAsync()
+        private async Task<bool> ConnectAsync()
         {
             var r = await eftw.Connect(Data.Settings.Host, Data.Settings.Port, Data.Settings.UseSSL);
             Data.IsSettingsShown = !r;
             return r;
         }
 
-        public async Task<bool> ConnectAsync(string host, int port, bool useSSL)
+        private async Task<bool> ConnectAsync(string host, int port, bool useSSL)
         {
             Data.Settings.Host = host;
             Data.Settings.Port = port;
@@ -192,36 +229,61 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             return await ConnectAsync();
         }
 
-        public void Disconnect()
+        private async Task DoCloudLogonCommand(bool connect)
         {
-            eftw.Disconnect();
-            Data.IsSettingsShown = true;
-        }
-
-        public RelayCommand Connect
-        {
-            get
+            try
             {
-                return new RelayCommand(async (o) =>
+                var p = Data.CurrentEndPoint;
+                if (p == null)
                 {
-                    if (Data.ConnectedState == ConnectedStatus.Disconnected)
-                    {
-                        if (Data.Settings.UseSSL)
+                    Data.Log("Not connected to an endpoint", LogType.Info);
+                    return;
+                }
+
+                if(connect)
+                {
+                    Data.Log($"{p.Type} connection to {p.Address}:{p.Port}...", LogType.Info);
+                    await ConnectAsync(p.Address, p.Port, p.UseSSL);
+                }
+
+                // Attempt to connect
+                switch (p.Type)
+                {
+                    case EndPointType.Local:
+                        break;
+                    case EndPointType.CloudWithLegacyPairing:
+                        Data.Log("Cloud (legacy pairing) logon...", LogType.Info);
+
+                        Data.Settings.CloudInfo.ClientId = p.ClientId;
+                        Data.Settings.CloudInfo.Password = p.Password;
+                        Data.Settings.CloudInfo.PairingCode = p.PairingCode;
+                        await DoCloudLogon(p.Password);
+                        break;
+                    case EndPointType.Cloud:
+                        Data.Log("Cloud logon...", LogType.Info);
+                        if (string.IsNullOrEmpty(p.Token))
                         {
-                            string p = (string)o;
-                            await DoCloudLogon(p);
+                            Data.Log($"Invalid token. Pair with pinpad in end-point settings to continue...", LogType.Info);
                         }
                         else
                         {
-                            await eftw.Connect(Data.Settings.Host, Data.Settings.Port, Data.Settings.UseSSL);
+                            await DoCloudTokenLogon(p.Token);
                         }
-                    }
-                    else
-                    {
-                        eftw.Disconnect();
-                    }
-                });
+                        break;
+                }
             }
+            catch (Exception ex)
+            {
+                Data.Log(ex.Message, LogType.Error);
+            }
+        }
+
+        public void DoConnect() => _ = DoCloudLogonCommand(true);
+
+        public void DoDisconnect()
+        {
+            eftw.Disconnect();
+            Data.IsSettingsShown = true;
         }
         #endregion
 
@@ -230,52 +292,20 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         {
             get 
             {
-                return new RelayCommand(async (o) =>
+                return new RelayCommand((o) =>
                 {
                     try
                     {
-                        if (Data.ConnectedState == ConnectedStatus.Connected)
+                        if (Data.ConnectedState == ConnectedStatus.Disconnected)
                         {
-                            Disconnect();
-                            return;
+                            if (Data.Settings.IsWoolworthsPOS)
+                                Data.ConnectedState = ConnectedStatus.AutoConnect;
+                            else
+                                DoConnect();
                         }
-
-                        var p = Data.CurrentEndPoint;
-                        if (p == null)
+                        else
                         {
-                            Data.Log("Add a new end-point to connect to", LogType.Info);
-                            return;
-                        }
-
-                        // Attempt to connect
-                        switch (p.Type)
-                        {
-                            case EndPointType.Local:
-                                Data.Log($"Local connection to {p.Address}:{p.Port}...", LogType.Info);
-                                await ConnectAsync(p.Address, p.Port, p.UseSSL);
-                                break;
-                            case EndPointType.CloudWithLegacyPairing:
-                                Data.Log($"Cloud (legacy pairing) connection to {p.Address}:{p.Port}...", LogType.Info);
-
-                                Data.Settings.CloudInfo.ClientId = p.ClientId;
-                                Data.Settings.CloudInfo.Password = p.Password;
-                                Data.Settings.CloudInfo.PairingCode = p.PairingCode;
-
-                                await ConnectAsync(p.Address, p.Port, p.UseSSL);
-                                await DoCloudLogon(p.Password);
-                                break;
-                            case EndPointType.Cloud:
-                                Data.Log($"Cloud connection to {p.Address}:{p.Port}...", LogType.Info);
-                                if (string.IsNullOrEmpty(p.Token))
-                                {
-                                    Data.Log($"Invalid token. Pair with pinpad in end-point settings to continue...", LogType.Info);
-                                }
-                                else
-                                {
-                                    await ConnectAsync(p.Address, p.Port, p.UseSSL);
-                                    await DoCloudTokenLogon(p.Token);
-                                }
-                                break;
+                            DoDisconnect();
                         }
                     }
                     catch (Exception ex)
@@ -288,55 +318,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         #endregion
 
         #region CloudLogon
-        public RelayCommand CloudLogonCommand
-        {
-            get
-            {
-                return new RelayCommand(async (o) =>
-                {
-                    try
-                    {
-                        var p = Data.CurrentEndPoint;
-                        if (p == null)
-                        {
-                            Data.Log("Not connected to an endpoint", LogType.Info);
-                            return;
-                        }
-
-                        // Attempt to connect
-                        switch (p.Type)
-                        {
-                            case EndPointType.Local:
-                                break;
-                            case EndPointType.CloudWithLegacyPairing:
-                                Data.Log($"Cloud (legacy pairing) connection to {p.Address}:{p.Port}...", LogType.Info);
-                                
-                                Data.Settings.CloudInfo.ClientId = p.ClientId;
-                                Data.Settings.CloudInfo.Password = p.Password;
-                                Data.Settings.CloudInfo.PairingCode = p.PairingCode;
-
-                                await DoCloudLogon(p.Password);
-                                break;
-                            case EndPointType.Cloud:
-                                Data.Log($"Cloud connection to {p.Address}:{p.Port}...", LogType.Info);
-                                if (string.IsNullOrEmpty(p.Token))
-                                {
-                                    Data.Log($"Invalid token. Pair with pinpad in end-point settings to continue...", LogType.Info);
-                                }
-                                else
-                                {
-                                    await DoCloudTokenLogon(p.Token);
-                                }
-                                break;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Data.Log(ex.Message, LogType.Error);
-                    }
-                });
-            }
-        }
+        public RelayCommand CloudLogonCommand => new RelayCommand((o) => _ = DoCloudLogonCommand(false));
         #endregion
 
         #region Logon
@@ -346,17 +328,27 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             {
                 return new RelayCommand(async (o) =>
                 {
-                    var r = new EFTLogonRequest()
+                    try
                     {
-                        LogonType = Data.SelectedLogon,
-                        CutReceipt = Data.CutReceiptMode,
-                        ReceiptAutoPrint = Data.PrintMode,
-                        Application = Data.Application,
-                        Merchant = Data.MerchantNumber,
-                        PurchaseAnalysisData = GetPad(false)
-                    };
+                        if (!CheckNoErrorsOnCurrentForm())
+                            throw new InvalidDataException("Invalid data on form");
 
-                    await eftw.Logon(r, false);
+                        var r = new EFTLogonRequest()
+                        {
+                            LogonType = Data.SelectedLogon,
+                            CutReceipt = Data.CutReceiptMode,
+                            ReceiptAutoPrint = Data.PrintMode,
+                            Application = Data.Application,
+                            Merchant = Data.MerchantNumber,
+                            PurchaseAnalysisData = GetPad(false)
+                        };
+
+                        await eftw.Logon(r, false);
+                    }
+                    catch (Exception e)
+                    {
+                        Data.Log(e.Message);
+                    }
                 });
             }
         }
@@ -379,8 +371,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             {
                 if (Data.ConnectedState == ConnectedStatus.Disconnected)
                 {
-                    var r = await eftw.Connect(Data.Settings.Host, Data.Settings.Port, Data.Settings.UseSSL);
-                    if (!r)
+                    if (!await ConnectAsync())
                         return;
                 }
 
@@ -411,8 +402,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             {
                 if (Data.ConnectedState == ConnectedStatus.Disconnected)
                 {
-                    var r = await eftw.Connect(Data.Settings.Host, Data.Settings.Port, Data.Settings.UseSSL);
-                    if (!r)
+                    if (!await ConnectAsync())
                         return;
                 }
 
@@ -470,7 +460,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         #region PadTag
         private PadTag SetPadTag(PadField padField, bool setTag, string tagName, string newData, bool forceReplace)
         {
-            if (setTag && !string.IsNullOrEmpty(newData) && (!padField.HasTag(tagName) || forceReplace))
+            if ((padField != null) && setTag && !string.IsNullOrEmpty(newData) && (!padField.HasTag(tagName) || forceReplace))
             {
                 return padField.SetTag(tagName, newData);
             }
@@ -488,10 +478,23 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                     ExternalData newData = new ExternalData(tagString, tagString);
                     PadEditor.AddData(QPAD_FILENAME, newData);
                     Data.PadItems.Add(newData);
-                    NotifyPropertyChanged("PadList");
                     Data.PadItemsList.Last().IsChecked = true;
                 }
             }
+        }
+
+        PadField AddAutoPadTags(ref PadField pf)
+        {
+            SetPadTag(pf, Data.PADAppendAMT, "AMT", decimal.ToInt32(Data.TransactionRequest.AmtPurchase * 100).ToString(), false);
+            SetPadTag(pf, Data.PADAppendNME, "NME", "Linkly Test POS", false);
+            SetPadTag(pf, Data.PADAppendVER, "VER", Data.POSVersion, false);
+            SetPadTag(pf, Data.PADAppendOPR, "OPR", "0|USER", false);
+            SetPadTag(pf, Data.PADAppendUID, "UID", Guid.NewGuid().ToString("N"), false);
+            SetPadTag(pf, Data.PADAppendVND, "VND", Data.POSVendorId.ToString("N"), false);
+            SetPadTag(pf, Data.PADAppendPCM, "PCM", Data.PADPCMBarcode ? "10000000" : "00000000", false);
+            SetPadTag(pf, Data.PADAppendSKU, "SKU", Data.PADSKUId, false);
+            SetPadTag(pf, Data.PADAppendRFN, "RFN", Data.LastTxnRFN, false);
+            return pf;
         }
 
         PadField GetPad(bool includeAutoPadTags)
@@ -502,15 +505,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
             if (includeAutoPadTags)
             {
-                SetPadTag(pf, Data.PADAppendAMT, "AMT", decimal.ToInt32(Data.TransactionRequest.AmtPurchase * 100).ToString(), false);
-                SetPadTag(pf, Data.PADAppendNME, "NME", "Linkly Test POS", false);
-                SetPadTag(pf, Data.PADAppendVER, "VER", Data.POSVersion, false);
-                SetPadTag(pf, Data.PADAppendOPR, "OPR", "0|USER", false);
-                SetPadTag(pf, Data.PADAppendUID, "UID", Guid.NewGuid().ToString("N"), false);
-                SetPadTag(pf, Data.PADAppendVND, "VND", Data.POSVendorId.ToString("N"), false);
-                SetPadTag(pf, Data.PADAppendPCM, "PCM", Data.PADPCMBarcode ? "10000000" : "00000000", false);
-                SetPadTag(pf, Data.PADAppendSKU, "SKU", Data.PADSKUId, false);
-                SetPadTag(pf, Data.PADAppendLastRFN, "RFN", Data.LastTxnRFN, false);
+                AddAutoPadTags(ref pf);
             }
             return pf;
         }
@@ -555,6 +550,35 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             return track2;
         }
 
+        private void CheckAddAutoTransactionReference()
+        {
+            if (Data.AutoTransactionReference)
+            {
+                Data.TransactionReference = DateTime.Now.ToString(Data.Settings.IsWoolworthsPOS ? "HHmmssff" : "yyMMddHHmmssffff");
+            }
+        }
+
+        private IEnumerable<T> FindAllChildren<T>(DependencyObject depObj) where T : DependencyObject
+        {
+            if (depObj != null)
+            {
+                foreach (var child in LogicalTreeHelper.GetChildren(depObj).OfType<DependencyObject>())
+                {
+                    if (child is T found)
+                        yield return found;
+
+                    foreach (var childOfChild in FindAllChildren<T>(child))
+                        yield return childOfChild;
+                }
+            }
+        }
+
+        private bool CheckNoErrorsOnCurrentForm()
+        {
+            var item = _parent.GetCurrentTabItem();
+            return !Validation.GetHasError(item) && FindAllChildren<TextBox>(item).All(x => !Validation.GetHasError(x));
+        }
+
         public RelayCommand TransactionCommand
         {
             get
@@ -563,12 +587,12 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 {
                     try
                     {
+                        if (!CheckNoErrorsOnCurrentForm())
+                            throw new InvalidDataException("Invalid data on form");
+
                         Data.TransactionRequest.Track2 = GetAndSaveSelectedTrack2();
 
-                        if (Data.AutoTransactionReference)
-                        {
-                            Data.TransactionReference = DateTime.Now.ToString("yyMMddHHmmssffff");
-                        }
+                        CheckAddAutoTransactionReference();
 
                         Data.TransactionRequest.Application = Data.Application;
                         Data.TransactionRequest.PurchaseAnalysisData = GetPad(true);
@@ -593,34 +617,36 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 {
                     try
                     {
+                        if (!CheckNoErrorsOnCurrentForm())
+                            throw new InvalidDataException("Invalid data on form");
+
                         if (!Data.IsETS)
                         {
                             Data.TransactionRequest.Application = TerminalApplication.EFTPOS;
                             Data.Application = TerminalApplication.EFTPOS;
                         }
 
-                        if (Data.AutoTransactionReference)
-                        {
-                            Data.TransactionReference = DateTime.Now.ToString("yyMMddHHmmssffff");
-                        }
+                        CheckAddAutoTransactionReference();
 
                         Data.TransactionRequest.TxnRef = Data.TransactionReference;
 
                         bool oneButton = Data.TransactionRequest.Merchant == "99";
-                        await eftw.QueryCard(GetPad(false), QueryCardType.ReadCard, Data.TransactionRequest.Merchant);
+                        await eftw.QueryCard(GetPad(false), Data.SelectedQuery, Data.TransactionRequest.Merchant);
 
-                        Data.LastTxnResult.TryGetValue("Success", out string result);
-                        if (result != null && result.Equals("True"))
+                        if ((Data.LastTxnRespType == nameof(EFTQueryCardResponse)) &&
+                             Data.LastTxnResult.TryGetValue("Success", out string result) &&
+                             result.Equals("True"))
                         {
+                            string originalMerchant  = Data.TransactionRequest.Merchant;
+                            PanSource originalPanSource = Data.TransactionRequest.PanSource;
+
                             if(oneButton)
                             {
-                                string id = string.Empty;
-                                Data.LastTxnResult.TryGetValue("CardBin", out id);
-                                Data.TransactionRequest.Merchant = id;
+                                Data.LastTxnResult.TryGetValue("CardBin", out string id);
+                                Data.TransactionRequest.Merchant = id ?? string.Empty;
                             }
                             else if(!string.IsNullOrEmpty(Data.SelectedTrack2))
                             {
-                                Data.SelectedCardSource = PanSource.POSSwiped.ToString();
                                 Data.TransactionRequest.PanSource = PanSource.POSSwiped;
                                 Data.TransactionRequest.Track2 = GetAndSaveSelectedTrack2();
                             }
@@ -629,13 +655,22 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                                 return;
                             }
 
-                            Data.TransactionRequest.PurchaseAnalysisData = GetPad(true);
+                            if(Data.IsWoolworthsPOS)
+                            {
+                                PadField pf = Data.LastTxnPAD.Clone();
+                                AddAutoPadTags(ref pf);
+                                Data.TransactionRequest.PurchaseAnalysisData = pf;
+                            }
+                            else
+                            {
+                                Data.TransactionRequest.PurchaseAnalysisData = GetPad(true);
+                            }
+
                             await eftw.DoTransaction(Data.TransactionRequest);
 
-                            if (oneButton)
-                            {
-                                Data.TransactionRequest.Merchant = "99";//reset this back to 99
-                            }
+                            //Reset fields back
+                            Data.TransactionRequest.Merchant = originalMerchant;
+                            Data.TransactionRequest.PanSource = originalPanSource;
                         }
                     }
                     catch (Exception ex)
@@ -738,6 +773,21 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         #endregion
 
+        #region RawData
+
+        public RelayCommand SendRawData
+        {
+            get
+            {
+                return new RelayCommand(async (o) =>
+                {
+                    await eftw.DoRawData(Data.RawData, Data.RawDataWait);
+                });
+            }
+        }
+
+        #endregion
+
         #region Configure Merchant
         public RelayCommand ConfigureMerchant
         {
@@ -745,7 +795,17 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             {
                 return new RelayCommand(async (o) =>
                 {
-                    await eftw.ConfigureMerchant(Data.MerchantDetails);
+                    try
+                    {
+                        if (!CheckNoErrorsOnCurrentForm())
+                            throw new InvalidDataException("Invalid data on form");
+
+                        await eftw.ConfigureMerchant(Data.MerchantDetails);
+                    }
+                    catch (Exception e)
+                    {
+                        Data.Log(e.Message);
+                    }
                 });
             }
         }
@@ -758,7 +818,17 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             {
                 return new RelayCommand(async (o) =>
                 {
-                    await eftw.DoSettlement(Data.SelectedSettlement, Data.CutReceiptMode, GetPad(false), Data.PrintMode, Data.ResetTotals);
+                    try
+                    {
+                        if (!CheckNoErrorsOnCurrentForm())
+                            throw new InvalidDataException("Invalid data on form");
+
+                        await eftw.DoSettlement(Data.SelectedSettlement, Data.CutReceiptMode, GetPad(false), Data.PrintMode, Data.ResetTotals);
+                    }
+                    catch (Exception e)
+                    {
+                        Data.Log(e.Message);
+                    }
                 });
             }
         }
@@ -781,7 +851,17 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             {
                 return new RelayCommand(async (o) =>
                 {
-                    await eftw.QueryCard(GetPad(false), Data.SelectedQuery, Data.MerchantNumber, Data.Application);
+                    try
+                    {
+                        if (!CheckNoErrorsOnCurrentForm())
+                            throw new InvalidDataException("Invalid data on form");
+
+                        await eftw.QueryCard(GetPad(false), Data.SelectedQuery, Data.MerchantNumber, Data.Application);
+                    }
+                    catch (Exception e)
+                    {
+                        Data.Log(e.Message);
+                    }
                 });
             }
         }
@@ -891,13 +971,23 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             {
                 return new RelayCommand(async (o) =>
                 {
-                    if(Data.SelectedCommand == null)
+                    try
                     {
-                        ExternalData slaveCmd = new ExternalData(Data.CommandRequest, Data.CommandRequest);
-                        Data.CommandsList = PadEditor.AddData(SLAVE_CMD_FILENAME, slaveCmd);
-                        Data.SelectedCommand = slaveCmd;
+                        if (!CheckNoErrorsOnCurrentForm())
+                            throw new InvalidDataException("Invalid data on form");
+
+                        if(Data.SelectedCommand == null)
+                        {
+                            ExternalData slaveCmd = new ExternalData(Data.CommandRequest, Data.CommandRequest);
+                            Data.CommandsList = PadEditor.AddData(SLAVE_CMD_FILENAME, slaveCmd);
+                            Data.SelectedCommand = slaveCmd;
+                        }
+                        await eftw.DoSlaveMode(Data.CommandRequest);
                     }
-                    await eftw.DoSlaveMode(Data.CommandRequest);
+                    catch (Exception e)
+                    {
+                        Data.Log(e.Message);
+                    }
                 });
             }
         }
@@ -912,7 +1002,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 if (!int.TryParse(SlaveDisplayLinesWidth, out int width) || SlaveDisplayLinesText == null)
                     return;
 
-                StringBuilder sb = new StringBuilder($"*@1{count + 1:D2}Z 006{count:D2}{width:D2}  ");
+                StringBuilder sb = new StringBuilder($"*@1{count + 1:D2}Z 006{count:D2}{width:D2} 1");
 
                 for (int i = 0; i < count; i++)
                 {
@@ -941,8 +1031,8 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         private const string SLAVE_IMAGE_120x160      = "*@111MD002TiMW004Ti\x0F\xA0MW197Ti\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1F\xFF\x80\x18\x1F\x86\x60\x06\x1E\x7F\xF9\xE1\xE1\xFF\xF8\x1F\xFF\x80\x18\x1F\x86\x60\x06\x1E\x7F\xF9\xE1\xE1\xFF\xF8\x18\x01\x99\xE7\xF9\xE1\x86\x61\xF8\x18\x1F\x86\x61\x80\x18\x18\x01\x99\xE7\xF9\xE1\x86\x61\xF8\x18\x1F\x86\x61\x80\x18\x19\xF9\x80\x61\x9F\x87\xE7\x86\x06\x7F\xE1\x99\xE1\x9F\x98\x19\xF9\x80\x61\x9F\x87\xE7\x86\x06\x7F\xE1\x99\xE1\x9F\x98\x19\xF9\x98\x67\xE1\xE1\x99\xE0\x78\x19\x9F\xE0\x61\x9F\x98\x19\xF9\x98\x67\xE1\xE1\x99\xE0\x78\x19\x9F\xE0\x61\x9F\x98\x19\xF9\x80\x78\x1F\x86\x67\xFF\x9E\x7F\xF9\xFE\x61\x9F\x98\x19\xF9\x80\x78\x1F\x86\x67\xFF\x9E\x7F\xF9\xFE\x61\x9F\x98\x18\x01\x9E\x67\xF9\xE1\x87\x81\xF8\x18\x1F\x87\x81\x80\x18MW317Ti\x18\x01\x9E\x67\xF9\xE1\x87\x81\xF8\x18\x1F\x87\x81\x80\x18\x1F\xFF\x99\x99\x99\x99\x99\x99\x99\x99\x99\x99\x99\xFF\xF8\x1F\xFF\x99\x99\x99\x99\x99\x99\x99\x99\x99\x99\x99\xFF\xF8\x00\x00\x07\x99\x9F\x87\xE1\x81\x81\xF8\x66\x66\x60\x00\x00\x00\x00\x07\x99\x9F\x87\xE1\x81\x81\xF8\x66\x66\x60\x00\x00\x1F\xF9\xFE\x1F\x81\x81\xF9\xFF\xFF\x9E\x18\x00\x1E\x66\x60\x1F\xF9\xFE\x1F\x81\x81\xF9\xFF\xFF\x9E\x18\x00\x1E\x66\x60\x07\xF8\x1F\x80\x67\xFE\x1F\x86\x19\xF8\x7E\x66\x60\x00\x00\x07\xF8\x1F\x80\x67\xFE\x1F\x86\x19\xF8\x7E\x66\x60\x00\x00\x07\xF9\x87\xF8\x06\x1E\x79\xE1\xFE\x1E\x19\x80\x06\x61\xF8\x07\xF9\x87\xF8\x06\x1E\x79\xE1\xFE\x1E\x19\x80\x06\x61\xF8\x06\x1E\x79\x9E\x60\x78\x1F\x81\xE1\x98\x06\x00\x60\x7F\x98\x06\x1E\x79\x9E\x60\x78\x1F\x81\xE1\x98\x06\x00\x60\x7F\x98\x06\x19\x99\xE0\x06\x06\x78\x67\x87\xE6\x66\x7F\x86\x66\x78\x06\x19\x99\xE0\x06\x06\x78\x67\x87\xE6\x66\x7F\x86\x66\x78\x00\x66\x79\x9E\x61\xF8\x1F\x81\xE1\x80\x07\x98\x78\x7E\x60\x00\x66\x79\x9E\x61\xF8\x1F\x81\xE1\x80\x07\x98\x78\x7E\x60\x1E\x1F\xFE\x00\x06\x1E\x79\xE7\x86\x66\x60\x79\xFE\x78\x00\x1E\x1F\xFE\x00\x06\x1E\x79\xE7\x86\x66\x60\x79\xFE\x78\x00\x01\x86\x60\x7E\x60\x78\x1F\x81\xE1\x98\x06\x06\x7F\x86\x60\x01\x86\x60\x7E\x60\x78\x1F\x81\xE1\x98\x06\x06\x7F\x86\x60MW317Ti\x01\xFF\xE1\xF8\x06\x06\x78\x67\x87\xE6\x60\x78\x19\xE1\x80\x01\xFF\xE1\xF8\x06\x06\x78\x67\x87\xE6\x60\x78\x19\xE1\x80\x00\x7E\x60\x1E\x61\xF8\x1F\x81\xE1\x80\x06\x1E\x67\x86\x60\x00\x7E\x60\x1E\x61\xF8\x1F\x81\xE1\x80\x06\x1E\x67\x86\x60\x19\xF9\x80\x1F\x86\x1E\x79\xE7\x86\x66\x61\xF8\x00\x60\x00\x19\xF9\x80\x1F\x86\x1E\x79\xE7\x86\x66\x61\xF8\x00\x60\x00\x18\x66\x01\xF9\xE0\x78\x1F\xE1\xE1\x98\x06\x1E\x67\xE6\x60\x18\x66\x01\xF9\xE0\x78\x1F\xE1\xE1\x98\x06\x1E\x67\xE6\x60\x1E\x07\xE0\x67\x86\x06\x78\x1F\x87\xE6\x60\x60\x7F\x99\x80\x1E\x07\xE0\x67\x86\x06\x78\x1F\x87\xE6\x60\x60\x7F\x99\x80\x06\x00\x01\x80\x61\xF8\x18\x79\xE1\x80\x06\x1E\x18\x79\x98\x06\x00\x01\x80\x61\xF8\x18\x79\xE1\x80\x06\x1E\x18\x79\x98\x18\x1F\xF8\x67\x86\x1E\x7E\x1F\x86\x66\x61\xF8\x79\x9F\xE0\x18\x1F\xF8\x67\x86\x1E\x7E\x1F\x86\x66\x61\xF8\x79\x9F\xE0\x01\x80\x07\x80\x60\x78\x18\x61\xE6\x1F\x81\x81\x9F\xE1\x80\x01\x80\x07\x80\x60\x78\x18\x61\xE6\x1F\x81\x81\x9F\xE1\x80\x19\x81\x98\x79\xE6\x66\x1E\x1F\x80\x61\xE7\xFF\xF9\x9F\xE0\x19\x81\x98\x79\xE6\x66\x1E\x1F\x80\x61\xE7\xFF\xF9\x9F\xE0\x01\x9E\x78\x00\x19\x80\x60\x79\xE6\x07\x81\x99\x9F\xFF\xE0\x01\x9E\x78\x00\x19\x80\x60\x79\xE6\x07\x81\x99\x9F\xFF\xE0\x00\x1F\xFF\x81\xF9\xE1\x81\xFF\x80\x60\x67\xFE\x7F\xF9\x80MW317Ti\x00\x1F\xFF\x81\xF9\xE1\x81\xFF\x80\x60\x67\xFE\x7F\xF9\x80\x07\xF8\x19\xE6\x1F\x87\xE7\x81\x86\x7F\xE6\x60\x18\x1F\xE0\x07\xF8\x19\xE6\x1F\x87\xE7\x81\x86\x7F\xE6\x60\x18\x1F\xE0\x1E\x79\x99\xF8\x61\xE1\x99\x99\xF8\x19\x9F\x86\x19\x9E\x00\x1E\x79\x99\xF8\x61\xE1\x99\x99\xF8\x19\x9F\x86\x19\x9E\x00\x18\x78\x18\x1F\x9F\x86\x61\x81\x9E\x7F\xF9\xE0\x18\x19\x80\x18\x78\x18\x1F\x9F\x86\x61\x81\x9E\x7F\xF9\xE0\x18\x19\x80\x07\x9F\xF9\xF8\x79\xE1\x81\xFF\xF8\x18\x19\x81\x9F\xFF\xF8\x07\x9F\xF9\xF8\x79\xE1\x81\xFF\xF8\x18\x19\x81\x9F\xFF\xF8\x07\xF8\x66\x06\x1F\x87\xE1\x9F\x86\x7F\xE1\xE1\xE0\x19\x98\x07\xF8\x66\x06\x1F\x87\xE1\x9F\x86\x7F\xE1\xE1\xE0\x19\x98\x00\x7F\x80\x60\x61\xE1\x98\x66\x78\x19\x9F\x87\x87\x9F\xF8\x00\x7F\x80\x60\x61\xE1\x98\x66\x78\x19\x9F\x87\x87\x9F\xF8\x1E\x66\x18\x06\x1F\x86\x61\x98\x1E\x7F\xF9\xE1\xF9\xE1\x80\x1E\x66\x18\x06\x1F\x86\x61\x98\x1E\x7F\xF9\xE1\xF9\xE1\x80\x19\x87\x81\xE0\x79\xE1\x80\x7E\x78\x18\x1F\x86\x07\x9F\xF8\x19\x87\x81\xE0\x79\xE1\x80\x7E\x78\x18\x1F\x86\x07\x9F\xF8\x07\xE6\x66\x79\x9F\x87\xE1\x99\x86\x7F\xE1\x99\x98\x61\x98\x07\xE6\x66\x79\x9F\x87\xE1\x99\x86\x7F\xE1\x99\x98\x61\x98\x01\x81\x86\x66\x61\xE1\x98\x66\x78\x19\x9F\x87\x80\x67\xF8\x01\x81\x86\x66\x61\xE1\x98\x66\x78\x19\x9F\x87\x80\x67\xF8MW317Ti\x1E\x66\x01\xFF\x9F\x86\x61\x98\x1E\x7F\xF9\xF9\x9E\x1E\x60\x1E\x66\x01\xFF\x9F\x86\x61\x98\x1E\x7F\xF9\xF9\x9E\x1E\x60\x07\x9F\xF9\xF8\x79\xE1\x80\x7E\x78\x18\x1F\x86\x18\x78\x00\x07\x9F\xF9\xF8\x79\xE1\x80\x7E\x78\x18\x1F\x86\x18\x78\x00\x00\x7E\x78\x79\x9F\x87\xE7\x99\x81\xF8\x66\x66\x06\x1E\x00\x00\x7E\x78\x79\x9F\x87\xE7\x99\x81\xF8\x66\x66\x06\x1E\x00\x06\x67\xF9\xE1\x81\x81\xFF\x86\x7F\x9E\x18\x00\x7F\x81\x80\x06\x67\xF9\xE1\x81\x81\xFF\x86\x7F\x9E\x18\x00\x7F\x81\x80\x06\x1E\x78\x78\x67\xFE\x1E\x60\x19\xF8\x7E\x66\x67\xE7\x80\x06\x1E\x78\x78\x67\xFE\x1E\x60\x19\xF8\x7E\x66\x67\xE7\x80\x00\x7F\x9F\xE6\x06\x1E\x79\x86\x7E\x1E\x19\x80\x7E\x01\xF8\x00\x7F\x9F\xE6\x06\x1E\x79\x86\x7E\x1E\x19\x80\x7E\x01\xF8\x00\x1E\x7F\x86\x60\x78\x1E\x61\xE1\x98\x06\x06\x07\xE7\x98\x00\x1E\x7F\x86\x60\x78\x1E\x61\xE1\x98\x06\x06\x07\xE7\x98\x1F\xE7\xE1\x81\x86\x06\x7F\x86\x07\xE6\x60\x7E\x78\x06\x78\x1F\xE7\xE1\x81\x86\x06\x7F\x86\x07\xE6\x60\x7E\x78\x06\x78\x01\x9E\x00\x60\x61\xF8\x1E\x60\x61\x80\x06\x18\x66\x66\x60\x01\x9E\x00\x60\x61\xF8\x1E\x60\x61\x80\x06\x18\x66\x66\x60\x19\x87\x98\x66\x06\x1E\x79\x86\x06\x66\x61\xFF\xF8\x00\x00\x19\x87\x98\x66\x06\x1E\x79\x86\x06\x66\x61\xFF\xF8\x00\x00\x1F\xF8\x07\x81\xE0\x78\x1E\x61\xE1\x98\x06\x06\x66\x66\x60MW317Ti\x1F\xF8\x07\x81\xE0\x78\x1E\x61\xE1\x98\x06\x06\x66\x66\x60\x00\x01\xF9\xFF\x86\x06\x7F\xFF\x87\xE6\x60\x78\x1F\xF9\x80\x00\x01\xF9\xFF\x86\x06\x7F\xFF\x87\xE6\x60\x78\x1F\xF9\x80\x00\x00\x18\x7F\xE1\xF8\x1F\x81\xE1\x80\x06\x1E\x18\x1E\x60\x00\x00\x18\x7F\xE1\xF8\x1F\x81\xE1\x80\x06\x1E\x18\x1E\x60\x1F\xFF\x99\xE6\x06\x1E\x79\x99\x86\x66\x61\xF8\x19\x98\x00\x1F\xFF\x99\xE6\x06\x1E\x79\x99\x86\x66\x61\xF8\x19\x98\x00\x18\x01\x87\x87\xE0\x78\x1F\x81\xE1\x98\x06\x7E\x18\x1E\x60\x18\x01\x87\x87\xE0\x78\x1F\x81\xE1\x98\x06\x7E\x18\x1E\x60\x19\xF9\x9E\x1E\x06\x06\x7F\xFF\x87\xE6\x60\x60\x1F\xF9\x80\x19\xF9\x9E\x1E\x06\x06\x7F\xFF\x87\xE6\x60\x60\x1F\xF9\x80\x19\xF9\x9F\xE1\xE1\xF8\x18\x01\xE1\x80\x06\x7E\x18\x19\x80\x19\xF9\x9F\xE1\xE1\xF8\x18\x01\xE1\x80\x06\x7E\x18\x19\x80\x19\xF9\x99\xFF\x86\x1E\x7F\xE7\x86\x66\x61\xF8\x66\x07\x80\x19\xF9\x99\xFF\x86\x1E\x7F\xE7\x86\x66\x61\xF8\x66\x07\x80\x18\x01\x9E\x66\x60\x78\x19\x81\xE6\x1F\x81\x81\x80\x61\x80\x18\x01\x9E\x66\x60\x78\x19\x81\xE6\x1F\x81\x81\x80\x61\x80\x1F\xFF\x9E\x07\xE6\x66\x1F\xE7\x80\x61\xE7\xFF\xE6\x67\xE0\x1F\xFF\x9E\x07\xE6\x66\x1F\xE7\x80\x61\xE7\xFF\xE6\x67\xE0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00MW317Ti\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0F\xC0\x3E\x00\xE0\x38\x30\x00\xF8\x1F\xF0\x00\x00\x00\x00\x1C\xE0\x77\x00\xE0\x38\x30\x03\x9E\x1F\xF8\x00\x00\x00\x00\x18\x70\xC1\x81\xF0\x3C\x30\x07\x06\x18\x18\x00\x00\x00\x00\x18\x01\x81\x01\xB0\x3C\x30\x06\x03\x18\x18\x00\x00\x00\x00\x1C\x01\x80\x01\xB8\x36\x30\x04\x03\x18\x18\x00\x00\x00\x00\x0F\x81\x80\x03\x18\x37\x30\x0C\x03\x1C\x38\x00\x00\x00\x00\x03\xE1\x80\x03\x18\x33\x30\x0C\x01\x1F\xE0\x00\x00\x00\x00\x00\x71\x80\x07\x0C\x31\xB0\x04\x03\x18\xC0\x00\x00\x00\x00\x00\x31\x80\x07\xFC\x31\xF0\x06\x03\x18\x60\x00\x00\x00\x00\x30\x31\x81\x87\xFE\x30\xF0\x06\x33\x18\x30\x00\x00\x00\x00\x18\x30\xC3\x8C\x06\x30\xF0\x03\x1E\x18\x18\x00\x00\x00\x00\x1F\xE0\x7F\x0C\x07\x30\x70\x01\xFE\x18\x1C\x00\x00\x00\x00\x07\x80\x1C\x1C\x03\x30\x30\x00\x73\x98\x0C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00MW317Ti\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\xE0\x1F\x81\xFC\x0F\xF8\x00\x00\x00\x00\x00\x00\x00\x00\x0E\x70\x79\xC1\xFF\x0F\xF8\x00\x00\x00\x00\x00\x00\x00\x00\x18\x38\x60\x61\x83\x0C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x18\x00\xC0\x61\x81\x8C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10\x00\xC0\x31\x81\x8C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x30\x00\xC0\x31\x81\x8F\xF8\x00\x00\x00\x00\x00\x00\x00\x00\x30\x00\xC0\x31\x81\x8F\xF8\x00\x00\x00\x00\x00\x00\x00\x00\x30\x00\xC0\x31\x81\x8C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10\x00\xC0\x31\x81\x8C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x18\x18\xE0\x61\x81\x8C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0C\x30\x60\xE1\x83\x0C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x07\xF0\x3F\x81\xFE\x0F\xFC\x00\x00\x00\x00\x00\x00\x00\x00\x01\xC0\x0E\x01\xF0\x0F\xFC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" + "DI0060000Ti";
         private const string SLAVE_DISPLAY_SWIPE      = "*@102J1000K100810000010";
         private const string SLAVE_DISPLAY_SWIPE_DISP = "*@105S1004300 Z 0060216  D 0200000   SWIPE CARD   D 0200100   ON  PINPAD   J1000K100800001010";
-        private const string SLAVE_DISPLAY_APP_HUB    = "*@111ZH0071020101D 0240000SELECT PAYMENT TYPE:D 024010065|AfterPay         D 024020089|Zip              D 024030067|Humm             D 024040072|OpenPay          D 024050066|Alipay           D 024060069|WeChat Pay       D 024070070|Klarna           D 024080062|QantasPoints     K200811111111";
-        private const string SLAVE_DISPLAY_MENU       = "*@112ZM0071020101D 0240000SELECT MENU ITEM:   D 0240100MENU ITEM 1         D 0240200MENU ITEM 2         D 0240300MENU ITEM 3         D 0240400MENU ITEM 4         D 0240500MENU ITEM 5         D 0240600MENU ITEM 6         D 0240700MENU ITEM 7         D 0240800MENU ITEM 8         D 0240900MENU ITEM 9         K200811111111";
+        private const string SLAVE_DISPLAY_APP_HUB    = "*@111ZH0070920101D 0240000SELECT PAYMENT TYPE:D 024010065|AfterPay         D 024020089|Zip              D 024030067|Humm             D 024040072|OpenPay          D 024050066|Alipay           D 024060069|WeChat Pay       D 024070070|Klarna           D 024080062|QantasPoints     K200811111111";
+        private const string SLAVE_DISPLAY_MENU       = "*@112ZM006102010D 0240000SELECT MENU ITEM:   D 0240100MENU ITEM 1         D 0240200MENU ITEM 2         D 0240300MENU ITEM 3         D 0240400MENU ITEM 4         D 0240500MENU ITEM 5         D 0240600MENU ITEM 6         D 0240700MENU ITEM 7         D 0240800MENU ITEM 8         D 0240900MENU ITEM 9         K200811111111";
         private const string SLAVE_DISPLAY_QR1        = "*@107MD002TqMW018TqCan You Read QR?ZQ0070716101D 024030HTq                  D 0240400LINE 3 EXAMPLE      D 0240500LINE 4 EXAMPLE      K200811111111";
         private const string SLAVE_DISPLAY_QR2        = "*@107MD002TqMW018TqCan You Read QR?ZQ0070716101D 024030HTq                  D 0240400LINE 3 EXAMPLE      D 0240500LINE 4 EXAMPLE      K200811111111";
 
@@ -986,6 +1076,13 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 return new RelayCommand(async (o) =>
                 {
                     await eftw.SendKey(Data.SelectedPosKey, Data.PosData);
+                    if (Data.Settings.IsWoolworthsPOS &&
+                       (eftw.requestInProgress != null) && (eftw.requestInProgress.MessageType == typeof(EFTQueryCardRequest)) &&
+                       Data.SelectedPosKey == EFTPOSKey.OkCancel && string.IsNullOrWhiteSpace(Data.PosData))
+                    {
+                        Data.Log($"Woolies: Cancelling In-progress Query Card", LogType.Info);
+                        eftw.requestInProgress = null;
+                    }
                 });
             }
         }

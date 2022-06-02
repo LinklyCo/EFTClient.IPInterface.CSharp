@@ -1,6 +1,6 @@
 namespace PCEFTPOS.EFTClient.IPInterface
 {
-    public enum InputType { None = '0', Normal = '1', Amount = '2', Decimal = '3', Password = '4', SupervisorRequestFromPinpad = '5', Char = '6', BarCode = '7' }
+    public enum InputType { None = '0', Normal = '1', Amount = '2', Decimal = '3', Password = '4', SupervisorRequestFromPinpad = '5', Char = '6', BarCodeAndKeyed = '7', BarCodeOnly = '8' }
     public enum GraphicCode { Processing = '0', Verify = '1', Question = '2', Card = '3', Account = '4', PIN = '5', Finished = '6', None = ' ' }
 
 

@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace PCEFTPOS.EFTClient.IPInterface
 {
-    public class PadTag
+    public class PadTag : IEquatable<PadTag>
     {
         public string Name { get; set; }
         public string Data { get; set; }
@@ -39,6 +40,15 @@ namespace PCEFTPOS.EFTClient.IPInterface
             sb.Append(Data);
             return sb.ToString();
         }
+
+
+        public bool Equals(PadTag other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Name == other.Name && Data == other.Data;
+        }
+
     }
 
     public class PadField : IList<PadTag>
@@ -51,7 +61,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         public PadTag this[int index] { get => ((IList<PadTag>)tags)[index]; set => ((IList<PadTag>)tags)[index] = value; }
 
-        public PadField() : this(null)
+        public PadField() : this((string)null)
         {
         }
 
@@ -63,6 +73,12 @@ namespace PCEFTPOS.EFTClient.IPInterface
             if (!SetFromString(data, true))
                 SetFromString(data, false);
         }
+
+        public PadField(PadField orig) : this(orig.GetAsString(true))
+        {
+        }
+
+        public PadField Clone() => new PadField(this);
 
         static int AsInt(string s, int defaultValue)
         {
@@ -104,6 +120,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 len = data.Length;
                 i = 0;
             }
+
             while (i < len)
             {
                 r = len - i;
@@ -167,6 +184,8 @@ namespace PCEFTPOS.EFTClient.IPInterface
             }
             return -1;
         }
+
+        public IEnumerable<PadTag> FindTags(string name) => tags.Where(x => x.Name == name);
 
         public bool HasTag(string name)
         {

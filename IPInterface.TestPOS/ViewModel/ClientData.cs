@@ -25,7 +25,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
     public enum LogType { Info, Error, Warning };
 
-    public enum ConnectedStatus { Connected, Disconnected };
+    public enum ConnectedStatus { Connected, Disconnected, AutoConnect };
 
     public delegate void LogEvent(string message);
     public delegate void DisplayEvent(bool show);
@@ -41,10 +41,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         public ClientData()
         {
-            _etsTransactionTypes = GetFilteredEnum<TransactionType>("ETS", true);
-            _transactionTypes = GetFilteredEnum<TransactionType>(true);
-
-            TxnTypeIdx = DefaultTxnTypeIdx;
         }
 
         #region Endpoints
@@ -110,7 +106,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         #region Logon
         public LogonType SelectedLogon { get; set; } = LogonType.Standard;
-        public Array LogonList => Enum.GetValues(typeof(LogonType));
+        public LogonType[] LogonList => (LogonType[])Enum.GetValues(typeof(LogonType));
 
         private bool _logonTestEnabled = false;
         public bool LogonTestEnabled
@@ -222,7 +218,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 TerminalString = _isETS ? prev : TerminalApplication.EFTPOS.ToString();
                 NotifyPropertyChanged(nameof(IsETS));
                 NotifyPropertyChanged(nameof(TransactionTypes));
-                TxnTypeIdx = DefaultTxnTypeIdx;
+                TxnTypeIdx = value ? 3 : 1;
             }
         }
 
@@ -294,7 +290,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 NotifyPropertyChanged(nameof(AutoTransactionReference));
             }
         }
-        
+
         string transactionReference = null;
         public string TransactionReference
         {
@@ -374,13 +370,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             set { _selectedApplication = value; NotifyPropertyChanged(nameof(Application)); }
         }
 
-        public Array CardSourceList => Enum.GetValues(typeof(PanSource));
-        string _selectedCardSource = string.Empty;
-        public string SelectedCardSource
-        {
-            get { return _selectedCardSource; }
-            set { _selectedCardSource = value; NotifyPropertyChanged(nameof(SelectedCardSource)); }
-        }
+        public PanSource[] CardSourceList => (PanSource[])Enum.GetValues(typeof(PanSource));
 
         public List<Mnd> MerchantNumberList => new List<Mnd>()
             {
@@ -417,7 +407,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             "NZD"
         };
 
-        public Array AccountList => Enum.GetValues(typeof(AccountType));
+        public AccountType[] AccountList => (AccountType[])Enum.GetValues(typeof(AccountType));
 
         ExternalDataList _track2Items = new ExternalDataList();
         public ExternalDataList Track2Items
@@ -450,13 +440,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             }
         }
 
-        Pad _selectedPadItem = new Pad();
-        public Pad SelectedPadItem
-        {
-            get => _selectedPadItem;
-            set { _selectedPadItem = value; NotifyPropertyChanged(nameof(SelectedPadItem)); }
-        }
-
         ObservableCollection<Pad> _padItemsList = new ObservableCollection<Pad>();
         public ObservableCollection<Pad> PadItemsList
         {
@@ -484,21 +467,10 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 SelectedPad = string.Empty;
                 SelectedPads?.Clear();
                 NotifyPropertyChanged(nameof(PadItemsList));
-                NotifyPropertyChanged(nameof(PadList));
             }
         }
 
         public List<string> SelectedPads { get; set; } = new List<string>();
-
-        public ObservableCollection<string> PadList
-        {
-            get
-            {
-                var list = new ObservableCollection<string>();
-                PadItems.ForEach(x => list.Add(x.ToString()));
-                return list;
-            }
-        }
 
         string _selectedPad = string.Empty;
         public string SelectedPad
@@ -541,8 +513,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 NotifyPropertyChanged(nameof(MerchantNumber));
             }
         }
-
-        private int DefaultTxnTypeIdx => IsETS ? 3 : 1;
 
         int _txnTypeIdx = -1;
         public int TxnTypeIdx
@@ -589,14 +559,11 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         #endregion
 
         #region ETS Transaction
-        readonly ObservableCollection<string> _etsTransactionTypes = null;
-        readonly ObservableCollection<string> _transactionTypes = null;
+        readonly ObservableCollection<string> _etsTransactionTypes = GetFilteredEnum<TransactionType>("ETS", true);
+        readonly ObservableCollection<string> _transactionTypes = GetFilteredEnum<TransactionType>(true);
         public ObservableCollection<string> TransactionTypes
         {
-            get
-            {
-                return IsETS ? _etsTransactionTypes : _transactionTypes;
-            }
+            get => IsETS ? _etsTransactionTypes : _transactionTypes;
         }
         #endregion
 
@@ -609,8 +576,24 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         public EFTClientListRequest ClientListRequest { get; set; } = new EFTClientListRequest();
         #endregion
 
+        #region RawData
+
+        public string RawData { get; set; }
+        public int RawDataWait { get; set; } = 10;
+
+        #endregion
+
         #region Configure Merchant
-        public EFTConfigureMerchantRequest MerchantDetails { get; set; } = new EFTConfigureMerchantRequest();
+        private EFTConfigureMerchantRequest _merchantDetails = new EFTConfigureMerchantRequest();
+        public EFTConfigureMerchantRequest MerchantDetails
+        {
+            get => _merchantDetails;
+            set
+            {
+                _merchantDetails = value;
+                NotifyPropertyChanged(nameof(MerchantDetails));
+            }
+        } 
         #endregion
 
         #region Settlement
@@ -623,11 +606,22 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         public ControlPanelType SelectedDisplay { get; set; }
         public Array ControlPanelList => Enum.GetValues(typeof(ControlPanelType));
 
+        public bool IsWoolworthsPOS
+        {
+            get => Settings.IsWoolworthsPOS;
+            set
+            {
+                Settings.IsWoolworthsPOS = value;
+                NotifyPropertyChanged(nameof(PosKeyList));
+            }
+        }
+
         #endregion
 
         #region QueryCard
-        public QueryCardType SelectedQuery { get; set; }
-        public Array QueryCardList => Enum.GetValues(typeof(QueryCardType));
+        private QueryCardType _selectedQuery = QueryCardType.ReadCard;
+        public QueryCardType SelectedQuery { get => _selectedQuery; set { _selectedQuery = value; NotifyPropertyChanged(nameof(SelectedQuery)); } }
+        public QueryCardType[] QueryCardList => (QueryCardType[])Enum.GetValues(typeof(QueryCardType));
         #endregion
 
         #region Cheque Auth
@@ -697,7 +691,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         #region SendKey
         public EFTPOSKey SelectedPosKey { get; set; } = EFTPOSKey.OkCancel;
-        public Array PosKeyList => Enum.GetValues(typeof(EFTPOSKey));
+        private ObservableCollection<EFTPOSKey> _posKeyList = GetFilteredEnumList<EFTPOSKey>();
+        private ObservableCollection<EFTPOSKey> _posKeyListWow = GetFilteredEnumList<EFTPOSKey>("Woolworths", false);
+        public ObservableCollection<EFTPOSKey> PosKeyList => Settings.IsWoolworthsPOS ? _posKeyListWow : _posKeyList;
 
         public string PosData { get; set; } = string.Empty;
         bool _sendKeyEnabled = false;
@@ -718,7 +714,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         #region Common
 
         private string _lastTxnType = null;
-        public string LastTxnType
+        public string LastTxnRespType
         {
             get
             {
@@ -727,7 +723,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             set
             {
                 _lastTxnType = value;
-                NotifyPropertyChanged(nameof(LastTxnType));
+                NotifyPropertyChanged(nameof(LastTxnRespType));
             }
         }
 
@@ -747,6 +743,8 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 NotifyPropertyChanged(nameof(HasResult));
             }
         }
+
+        public PadField LastTxnPAD { get; set; } = null;
 
         public ObservableCollection<HistoryViewModel> MessageHistory { get; } = new ObservableCollection<HistoryViewModel>();
 
@@ -826,13 +824,13 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             return new ObservableCollection<string>(Enum.GetNames(typeof(T)));
         }
 
-        private string GetEnumName(FieldInfo x, bool includeValue = false)
+        private static string GetEnumName(FieldInfo x, bool includeValue = false)
         {
             string value = includeValue ? $" ({Convert.ToChar(x.GetRawConstantValue())})" : "";
             return x.Name + value;
         }
 
-        private ObservableCollection<string> GetFilteredEnum<T>(bool includeValue = false)
+        private static ObservableCollection<string> GetFilteredEnum<T>(bool includeValue = false)
         {
             var list = typeof(T).GetFields()
                 .Where(x => x.IsLiteral && ((FilterAttribute[])x.GetCustomAttributes(typeof(FilterAttribute), false)).Length == 0)
@@ -840,13 +838,38 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             return new ObservableCollection<string>(list);
         }
 
-        private ObservableCollection<string> GetFilteredEnum<T>(string filter, bool includeValue = false)
+        private static ObservableCollection<string> GetFilteredEnum<T>(string filter, bool includeValue = false)
         {
             var list = typeof(T).GetFields()
                 .Where(x => x.IsLiteral && ((FilterAttribute[])x.GetCustomAttributes(typeof(FilterAttribute), false)).Length > 0
                         && ((FilterAttribute[])x.GetCustomAttributes(typeof(FilterAttribute), false))[0].CustomString.Equals(filter))
                 .Select(x => GetEnumName(x, includeValue));
             return new ObservableCollection<string>(list);
+        }
+
+        private static ObservableCollection<T> GetFilteredEnumList<T>()
+        {
+            var list = typeof(T).GetFields()
+                .Where(x => x.IsLiteral && ((FilterAttribute[])x.GetCustomAttributes(typeof(FilterAttribute), false)).Length == 0)
+                .Select(x => (T)x.GetValue(x));
+            return new ObservableCollection<T>(list);
+        }
+
+        private static ObservableCollection<T> GetFilteredEnumList<T>(string filter, bool filteredOnly = true)
+        {
+            var list = typeof(T).GetFields()
+                .Where(x => x.IsLiteral
+                        && ((FilterAttribute[])x.GetCustomAttributes(typeof(FilterAttribute), false)).Length > 0
+                        && ((FilterAttribute[])x.GetCustomAttributes(typeof(FilterAttribute), false))[0].CustomString.Equals(filter))
+                .Select(x => (T)x.GetValue(x));
+            if(!filteredOnly)
+            {
+                var nonFiltered = GetFilteredEnumList<T>();
+                foreach (T filtered in list)
+                    nonFiltered.Add(filtered);
+                return nonFiltered;
+            }
+            return new ObservableCollection<T>(list);
         }
 
         private T GetEnumValue<T>(string value, T def) where T : struct, Enum
@@ -892,157 +915,80 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         public string Token
         {
-            get
-            {
-                return Settings.CloudInfo.Token;
-            }
-            set
-            {
-                Settings.CloudInfo.Token = value;
-                NotifyPropertyChanged("txtToken");
-            }
+            get => Settings.CloudInfo.Token;
+            set  { Settings.CloudInfo.Token = value; NotifyPropertyChanged("txtToken"); }
         }
 
         #region PAD Data
 
-        private bool padAppendLastRFN = true;
-        public bool PADAppendLastRFN
+        private bool padAppendRFN = true;
+        public bool PADAppendRFN
         {
-            get
-            {
-                return padAppendLastRFN;
-            }
-            set
-            {
-                padAppendLastRFN = value;
-                NotifyPropertyChanged(nameof(PADAppendLastRFN));
-            }
+            get => padAppendRFN;
+            set  { padAppendRFN = value; NotifyPropertyChanged(nameof(PADAppendRFN)); }
         }
 
         private bool padAppendSKU = true;
         public bool PADAppendSKU
         {
-            get
-            {
-                return padAppendSKU;
-            }
-            set
-            {
-                padAppendSKU = value;
-                NotifyPropertyChanged(nameof(PADAppendSKU));
-            }
+            get => padAppendSKU;
+            set  { padAppendSKU = value; NotifyPropertyChanged(nameof(PADAppendSKU)); }
         }
 
         private bool padAppendOPR = true;
         public bool PADAppendOPR
         {
-            get
-            {
-                return padAppendOPR;
-            }
-            set
-            {
-                padAppendOPR = value;
-                NotifyPropertyChanged(nameof(PADAppendOPR));
-            }
+            get => padAppendOPR;
+            set  { padAppendOPR = value; NotifyPropertyChanged(nameof(PADAppendOPR)); }
         }
 
         private bool padAppendAMT = true;
         public bool PADAppendAMT
         {
-            get
-            {
-                return padAppendAMT;
-            }
-            set
-            {
-                padAppendAMT = value;
-                NotifyPropertyChanged(nameof(PADAppendAMT));
-            }
+            get => padAppendAMT;
+            set  { padAppendAMT = value; NotifyPropertyChanged(nameof(PADAppendAMT)); }
         }
 
         private bool padAppendUID = true;
         public bool PADAppendUID
         {
-            get
-            {
-                return padAppendUID;
-            }
-            set
-            {
-                padAppendUID = value;
-                NotifyPropertyChanged(nameof(PADAppendUID));
-            }
+            get => padAppendUID;
+            set  { padAppendUID = value; NotifyPropertyChanged(nameof(PADAppendUID)); }
         }
 
         private bool padAppendNME = true;
         public bool PADAppendNME
         {
-            get
-            {
-                return padAppendNME;
-            }
-            set
-            {
-                padAppendNME = value;
-                NotifyPropertyChanged(nameof(PADAppendNME));
-            }
+            get => padAppendNME;
+            set  { padAppendNME = value; NotifyPropertyChanged(nameof(PADAppendNME)); }
         }
 
         private bool padAppendVER = true;
         public bool PADAppendVER
         {
-            get
-            {
-                return padAppendVER;
-            }
-            set
-            {
-                padAppendVER = value;
-                NotifyPropertyChanged(nameof(PADAppendVER));
-            }
+            get => padAppendVER;
+            set  { padAppendVER = value; NotifyPropertyChanged(nameof(PADAppendVER)); }
         }
 
         private bool padAppendVND = true;
         public bool PADAppendVND
         {
-            get
-            {
-                return padAppendVND;
-            }
-            set
-            {
-                padAppendVND = value;
-                NotifyPropertyChanged(nameof(PADAppendVND));
-            }
+            get => padAppendVND;
+            set  { padAppendVND = value; NotifyPropertyChanged(nameof(PADAppendVND)); }
         }
 
         private bool padAppendPCM = true;
         public bool PADAppendPCM
         {
-            get
-            {
-                return padAppendPCM;
-            }
-            set
-            {
-                padAppendPCM = value;
-                NotifyPropertyChanged(nameof(PADAppendPCM));
-            }
+            get => padAppendPCM;
+            set  { padAppendPCM = value; NotifyPropertyChanged(nameof(PADAppendPCM)); }
         }
 
         private bool padPCMBarcode = false;
         public bool PADPCMBarcode
         {
-            get
-            {
-                return padPCMBarcode;
-            }
-            set
-            {
-                padPCMBarcode = value;
-                NotifyPropertyChanged(nameof(PADPCMBarcode));
-            }
+            get => padPCMBarcode;
+            set  { padPCMBarcode = value; NotifyPropertyChanged(nameof(PADPCMBarcode)); }
         }
         #endregion
 

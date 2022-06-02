@@ -301,6 +301,8 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 Type = TryParse<ReceiptType>(msg, 1, ref index)
             };
 
+            r.IsPrePrint = (r.Type != ReceiptType.ReceiptText);
+
             // Return early for a pre-print
             if (r.IsPrePrint)
             {
@@ -696,22 +698,59 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return keyHandlingType;
         }
 
-        EFTTerminalType ParseEFTTerminalType(string TerminalType)
+        EFTTerminalType ParseEFTTerminalType(string terminalType)
         {
-            EFTTerminalType terminalType = EFTTerminalType.Unknown;
+            var eftTerminalType = EFTTerminalType.Unknown;
+            switch(terminalType.ToLower())
+            {
+                case "albt": eftTerminalType = EFTTerminalType.Albert;                break;
 
-            if (TerminalType == "0062") terminalType = EFTTerminalType.IngenicoNPT710;
-            else if (TerminalType == "0069") terminalType = EFTTerminalType.IngenicoPX328;
-            else if (TerminalType == "7010") terminalType = EFTTerminalType.Ingenicoi3070;
-            else if (TerminalType == "5110") terminalType = EFTTerminalType.Ingenicoi5110;
-            else if (TerminalType == "0006") terminalType = EFTTerminalType.IngenicoIxx250;
-            else if (TerminalType == "i050") terminalType = EFTTerminalType.IngenicoMove5000;
-            else if (TerminalType == "p010") terminalType = EFTTerminalType.PCEFTPOSVirtualPinpad;
-            else if (TerminalType.ToLower() == "albt") terminalType = EFTTerminalType.Albert;
-            else if (TerminalType == "X690") terminalType = EFTTerminalType.VerifoneVx690;
-            else if (TerminalType == "0820") terminalType = EFTTerminalType.VerifoneVx820;
+                case "0006": eftTerminalType = EFTTerminalType.IngenicoIxx250;        break;
+                case "0062": eftTerminalType = EFTTerminalType.IngenicoNPT710;        break;
+                case "0069": eftTerminalType = EFTTerminalType.IngenicoPX328;         break;
+                case "5100": eftTerminalType = EFTTerminalType.Ingenicoi5100;         break;
+                case "5110": eftTerminalType = EFTTerminalType.Ingenicoi5110;         break;
+                case "7010": eftTerminalType = EFTTerminalType.Ingenicoi3070;         break;
+                case "i050": eftTerminalType = EFTTerminalType.IngenicoMove5000;      break;
+                case "i051": eftTerminalType = EFTTerminalType.IngenicoMove3500;      break;
+                case "i052": eftTerminalType = EFTTerminalType.IngenicoMove2500;      break;
+                case "i060": eftTerminalType = EFTTerminalType.IngenicoDesk5000;      break;
+                case "i061": eftTerminalType = EFTTerminalType.IngenicoDesk3000;      break;
+                case "i062": eftTerminalType = EFTTerminalType.IngenicoDesk1000;      break;
+                case "i070": eftTerminalType = EFTTerminalType.IngenicoLane7000;      break;
+                case "i071": eftTerminalType = EFTTerminalType.IngenicoLane5000;      break;
+                case "i072": eftTerminalType = EFTTerminalType.IngenicoLane3000;      break;
+                case "i080": eftTerminalType = EFTTerminalType.IngenicoAxiumD7;       break;
+                case "ia80": eftTerminalType = EFTTerminalType.IngenicoA8;            break;
 
-            return terminalType;
+                case "x300": eftTerminalType = EFTTerminalType.PaxA30;                break;
+                case "x770": eftTerminalType = EFTTerminalType.PaxA77;                break;
+                case "x920": eftTerminalType = EFTTerminalType.PaxA920;               break;
+                case "x92p": eftTerminalType = EFTTerminalType.PaxA920Pro;            break;
+
+                case "p010": eftTerminalType = EFTTerminalType.PCEFTPOSVirtualPinpad; break;
+
+                case "sp2l": eftTerminalType = EFTTerminalType.SunmiP2Lite;           break;
+                case "sp2p": eftTerminalType = EFTTerminalType.SunmiP2Pro;            break;
+
+                case "0820": eftTerminalType = EFTTerminalType.VerifoneVx820;         break;
+                case "p400": eftTerminalType = EFTTerminalType.VerifoneP400;          break; //Woolies special
+                case "v050": eftTerminalType = EFTTerminalType.VerifoneP400;          break;
+                case "v051": eftTerminalType = EFTTerminalType.VerifoneP200;          break;
+                case "v060": eftTerminalType = EFTTerminalType.VerifoneP400C;         break;
+                case "v061": eftTerminalType = EFTTerminalType.VerifoneP200C;         break;
+                case "v070": eftTerminalType = EFTTerminalType.VerifoneCarbon10;      break;
+                case "v071": eftTerminalType = EFTTerminalType.VerifoneCarbon8;       break;
+                case "v072": eftTerminalType = EFTTerminalType.VerifoneCarbon5;       break;
+                case "v424": eftTerminalType = EFTTerminalType.VerifoneM424;          break;
+                case "v630": eftTerminalType = EFTTerminalType.VerifoneP630;          break;
+                case "v650": eftTerminalType = EFTTerminalType.VerifoneT650P;         break;
+                case "x690": eftTerminalType = EFTTerminalType.VerifoneVx690;         break;
+
+                case "z001": eftTerminalType = EFTTerminalType.ZellerNewPos9220;      break;
+            }
+
+            return eftTerminalType;
         }
 
         PINPadOptionFlags ParseStatusOptionFlags(char[] Flags)
@@ -1014,7 +1053,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildEFTTransactionRequest(EFTTransactionRequest v)
         {
             var r = new StringBuilder();
-            r.Append("M");
+            r.Append(EFTRequestCommandCode.Transaction);
             r.Append("0");
             r.Append(v.Merchant.PadRightAndCut(2));
             r.Append((char)v.TxnType);
@@ -1046,7 +1085,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildEFTLogonRequest(EFTLogonRequest v)
         {
             var r = new StringBuilder();
-            r.Append("G");
+            r.Append(EFTRequestCommandCode.Logon);
             r.Append((char)v.LogonType);
             r.Append(v.Merchant.PadRightAndCut(2));
             r.Append((char)v.ReceiptAutoPrint);
@@ -1059,7 +1098,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildEFTReprintReceiptRequest(EFTReprintReceiptRequest v)
         {
             var r = new StringBuilder();
-            r.Append("C");
+            r.Append(EFTRequestCommandCode.ReprintReceipt);
             r.Append((char)v.ReprintType);
             r.Append(v.Merchant.PadRightAndCut(2));
             r.Append((char)v.CutReceipt);
@@ -1072,7 +1111,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildEFTGetLastTransactionRequest(EFTGetLastTransactionRequest v)
         {
             var r = new StringBuilder();
-            r.Append("N");
+            r.Append(EFTRequestCommandCode.GetLastTransaction);
             r.Append("0");
             r.Append(v.Application.ToApplicationString());
             r.Append(v.Merchant.PadRightAndCut(2));
@@ -1083,7 +1122,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildSetDialogRequest(SetDialogRequest v)
         {
             var r = new StringBuilder();
-            r.Append("2");
+            r.Append(EFTRequestCommandCode.SetDialog);
             r.Append(v.DisableDisplayEvents ? '5' : ' ');
             r.Append((char)v.DialogType);
             r.Append(v.DialogX.PadLeft(4));
@@ -1097,10 +1136,10 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildControlPanelRequest(EFTControlPanelRequest v)
         {
             var r = new StringBuilder();
-            r.Append("5"); // ControlPanel
+            r.Append(EFTRequestCommandCode.DisplayControlPanel); // ControlPanel
             r.Append((char)v.ControlPanelType);
-            r.Append((char)v.ReceiptPrintMode);
-            r.Append((char)v.ReceiptCutMode);
+            r.Append((char)v.ReceiptAutoPrint);
+            r.Append((char)v.CutReceipt);
             r.Append((char)v.ReturnType);
             return r;
         }
@@ -1108,7 +1147,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildSettlementRequest(EFTSettlementRequest v)
         {
             var r = new StringBuilder();
-            r.Append("P");
+            r.Append(EFTRequestCommandCode.Settlement);
             r.Append((char)v.SettlementType);
             r.Append(v.Merchant.PadRightAndCut(2));
             r.Append((char)v.ReceiptAutoPrint);
@@ -1122,7 +1161,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildQueryCardRequest(EFTQueryCardRequest v)
         {
             var r = new StringBuilder();
-            r.Append("J");
+            r.Append(EFTRequestCommandCode.QueryCard);
             r.Append((char)v.QueryCardType);
             r.Append(v.Application.ToApplicationString());
             r.Append(v.Merchant.PadRightAndCut(2));
@@ -1133,7 +1172,8 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildConfigMerchantRequest(EFTConfigureMerchantRequest v)
         {
             var r = new StringBuilder();
-            r.Append("10");
+            r.Append(EFTRequestCommandCode.ConfigureMerchant);
+            r.Append('0');
             r.Append(v.Merchant.PadRightAndCut(2));
             r.Append(v.AIIC.PadLeft(11));
             r.Append(v.NII.PadLeft(3));
@@ -1147,7 +1187,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildStatusRequest(EFTStatusRequest v)
         {
             var r = new StringBuilder();
-            r.Append("K");
+            r.Append(EFTRequestCommandCode.Status);
             r.Append((char)v.StatusType);
             r.Append(v.Merchant.PadRightAndCut(2));
             r.Append(v.Application.ToApplicationString());
@@ -1157,7 +1197,8 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildChequeAuthRequest(EFTChequeAuthRequest v)
         {
             var r = new StringBuilder();
-            r.Append("H0");
+            r.Append(EFTRequestCommandCode.ChequeAuth);
+            r.Append("0");
             r.Append(v.Application.ToApplicationString());
             r.Append(' ');
             r.Append(v.BranchCode.PadRightAndCut(6));
@@ -1173,7 +1214,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildGetPasswordRequest(EFTGetPasswordRequest v)
         {
             var r = new StringBuilder();
-            r.Append("X");
+            r.Append(EFTRequestCommandCode.Generic);
             r.Append((char)CommandType.GetPassword);
             r.Append(v.MinPasswordLength.PadLeft(2));
             r.Append(v.MaxPassworkLength.PadLeft(2));
@@ -1185,7 +1226,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildSlaveRequest(EFTSlaveRequest v)
         {
             var r = new StringBuilder();
-            r.Append("X");
+            r.Append(EFTRequestCommandCode.Generic);
             r.Append((char)CommandType.Slave);
             r.Append(v.RawCommand);
 
@@ -1194,13 +1235,14 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         StringBuilder BuildGetClientListRequest(EFTClientListRequest _)
         {
-            return new StringBuilder("Q0");
+            return new StringBuilder(EFTRequestCommandCode.GetClientList + "0");
         }
 
         StringBuilder BuildCloudLogonRequest(EFTCloudLogonRequest v)
         {
             var r = new StringBuilder();
-            r.Append("A ");
+            r.Append(EFTRequestCommandCode.CloudLogon);
+            r.Append(" ");
             r.Append(v.ClientID.PadRightAndCut(16));
             r.Append(v.Password.PadRightAndCut(16));
             r.Append(v.PairingCode.PadRightAndCut(16));
@@ -1210,7 +1252,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildCloudPairRequest(EFTCloudPairRequest v)
         {
             var r = new StringBuilder();
-            r.Append("A");
+            r.Append(EFTRequestCommandCode.CloudLogon);
             r.Append("P");
             r.Append(v.ClientID.PadRightAndCut(16));
             r.Append(v.Password.PadRightAndCut(16));
@@ -1221,7 +1263,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildCloudTokenLogonRequest(EFTCloudTokenLogonRequest v)
         {
             var r = new StringBuilder();
-            r.Append("A");
+            r.Append(EFTRequestCommandCode.CloudLogon);
             r.Append("T");
             r.Append(v.Token.Length.PadLeft(3));
             r.Append(v.Token);
@@ -1231,7 +1273,8 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildSendKeyRequest(EFTSendKeyRequest v)
         {
             var r = new StringBuilder();
-            r.Append("Y0");
+            r.Append(EFTRequestCommandCode.SendKey);
+            r.Append("0");
             r.Append((char)v.Key);
             if (v.Data?.Length > 0)
             {
@@ -1243,13 +1286,13 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         StringBuilder BuildReceiptRequest(EFTReceiptRequest _)
         {
-            return new StringBuilder("3 ");
+            return new StringBuilder(EFTRequestCommandCode.Receipt + " ");
         }
 
         StringBuilder BuildPayAtTableRequest(EFTPayAtTableRequest request)
         {
             var r = new StringBuilder();
-            r.Append("X");
+            r.Append(EFTRequestCommandCode.Generic);
             r.Append((char)CommandType.PayAtTable);
             r.Append(request.Header);
             r.Append(request.Content);
@@ -1260,7 +1303,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         StringBuilder BuildHeartbeatRequest(EFTHeartbeatRequest request)
         {
             var r = new StringBuilder();
-            r.Append('F');
+            r.Append(EFTRequestCommandCode.Heartbeat);
             r.Append(request.Reply ? '1' : '0');
             
             return r;

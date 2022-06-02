@@ -49,6 +49,9 @@
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="QRCoder, Version=1.4.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\QRCoder.1.4.1\lib\net40\QRCoder.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Data" />
@@ -73,11 +76,16 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="CredentialLocker.cs" />
-    <Compile Include="DataWriter.cs" />
-    <Compile Include="ExternalData.cs" />
-    <Compile Include="ObservableCollectionExtension.cs" />
-    <Compile Include="Pad.cs" />
+    <Compile Include="Utils\CredentialLocker.cs" />
+    <Compile Include="Utils\DataWriter.cs" />
+    <Compile Include="Utils\ExternalData.cs" />
+    <Compile Include="Utils\ObservableCollectionExtension.cs" />
+    <Compile Include="ViewModel\Pad.cs" />
+    <Compile Include="Properties\ControlValues.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>ControlValues.settings</DependentUpon>
+    </Compile>
     <Compile Include="ViewModel\EndPointViewModel.cs" />
     <Compile Include="ViewModel\DialogUIHandler.cs" />
     <Compile Include="ViewModel\EFTDisplayResponseVM.cs" />
@@ -95,7 +103,7 @@
     <Compile Include="Views\ProxyDialog.xaml.cs">
       <DependentUpon>ProxyDialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="RelayCommand.cs" />
+    <Compile Include="Utils\RelayCommand.cs" />
     <Page Include="Views\EndpointEditor.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -142,6 +150,10 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="packages.config" />
+    <None Include="Properties\ControlValues.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>ControlValues.Designer.cs</LastGenOutput>
+    </None>
     <None Include="ReleaseNotes.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

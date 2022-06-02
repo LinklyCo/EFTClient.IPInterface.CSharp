@@ -461,7 +461,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <summary>
         /// 
         /// </summary>
-        public int CVV { get; set; } = 0;
+        public int CVV { get; set; } = 0; //Not sent to EFT-Client
     }
 
     /// <summary>A PC-EFTPOS terminal transaction response object.</summary>
@@ -693,6 +693,11 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <summary>System Trace Audit Number</summary>
         /// <value>Type: <see cref="System.Int32"/></value>
         public int Stan { get; set; } = 0;
+        
+        /// <summary>System Trace Audit Number for VB.Net</summary>
+        /// <value>Type: <see cref="System.Int32"/></value>
+        [Description("Stan field to use for VB.Net to resolve ambiguity caused by VB case insensitivity")]
+        public int StanVb { get { return Stan; } set { Stan = value; } }
 
         /// <summary>System Trace Audit Number</summary>
         /// <value>Type: <see cref="System.Int32"/></value>

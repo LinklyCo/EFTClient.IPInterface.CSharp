@@ -36,7 +36,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         Socket_SendError,
         /// <summary>A general socket error occurred.</summary>
         Socket_GeneralError,
-        /// <summary>An error occured while parsing a received message..</summary>
+        /// <summary>An error occurred while parsing a received message..</summary>
         Client_ParseError
     }
 
@@ -72,7 +72,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         SynchronizationContext syncContext;
         IMessageParser _parser;
-        ITcpSocket socket;
+        ITcpSocket _socket;
         EFTRequest currentRequest;
         AutoResetEvent hideDialogEvent;
         bool gotResponse;
@@ -80,6 +80,8 @@ namespace PCEFTPOS.EFTClient.IPInterface
         int recvTickCount;
         bool requestInProgess;
 
+        public delegate ITcpSocket CreateITcpSocketDelegate(string hostName, int hostPort);
+        protected readonly CreateITcpSocketDelegate _createSocketDelegate;
         #endregion
 
         #region Constructors
@@ -87,12 +89,29 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <summary>Construct an EFTClientIP object.</summary>
         public EFTClientIP()
         {
+            _createSocketDelegate = CreateTcpSocket;
             Initialise();
         }
 
+        /// <summary>
+        /// Protected constructor that lets us overwrite how this class obtains an ITcpSocket so
+        /// as to use a mock one for unit testing.
+        /// Is protected so testing requires creating a wrapper class but this stops it 
+        /// </summary>
+        /// <param name="createITcpSocketDelegate"></param>
+        protected EFTClientIP(CreateITcpSocketDelegate createITcpSocketDelegate)
+        {
+            if (createITcpSocketDelegate == null)
+                throw new ArgumentNullException(nameof(createITcpSocketDelegate));
+            _createSocketDelegate = createITcpSocketDelegate;
+            Initialise();
+        }
+
+
+
         public void Dispose()
         {
-            socket?.Dispose();
+            _socket?.Dispose();
         }
 
         #endregion
@@ -116,17 +135,17 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// </example>
         public bool Connect()
         {
-            socket.HostName = HostName;
-            socket.HostPort = HostPort;
-            socket.UseKeepAlive = UseKeepAlive;
-            socket.UseSSL = UseSSL;
-            return socket.Start();
+            _socket.HostName = HostName;
+            _socket.HostPort = HostPort;
+            _socket.UseKeepAlive = UseKeepAlive;
+            _socket.UseSSL = UseSSL;
+            return _socket.Start();
         }
 
         /// <summary>Disconnect from the PC-EFTPOS client IP interface.</summary>
         public void Disconnect()
         {
-            socket.Stop();
+            _socket.Stop();
         }
 
         /// <summary>Sends a request to the EFT-Client</summary>
@@ -163,7 +182,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         }
 
         /// <summary>Hide the PC-EFTPOS dialogs.</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoHideDialogs()
         {
             hideDialogEvent.Reset();
@@ -178,7 +197,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
 
         /// <summary>Initiate a PC-EFTPOS logon using default values.</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoLogon()
         {
             return DoRequest(new EFTLogonRequest());
@@ -194,7 +213,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Initiate a PC-EFTPOS transaction.</summary>
         /// <param name="request">An <see cref="EFTTransactionRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoTransaction(EFTTransactionRequest request)
         {
             return DoRequest(request);
@@ -202,7 +221,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Initiate a PC-EFTPOS get last transaction.</summary>
         /// <param name="request">An <see cref="EFTGetLastTransactionRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoGetLastTransaction(EFTGetLastTransactionRequest request)
         {
             return DoRequest(request);
@@ -210,7 +229,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Initiate a PC-EFTPOS duplicate receipt request.</summary>
         /// <param name="request">An <see cref="EFTReprintReceiptRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoDuplicateReceipt(EFTReprintReceiptRequest request)
         {
             return DoRequest(request);
@@ -218,7 +237,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Send a key to PC-EFTPOS.</summary>
         /// <param name="request">An <see cref="EFTSendKeyRequest" />.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoSendKey(EFTSendKeyRequest request)
         {
             return DoRequest(request);
@@ -226,7 +245,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Send a key to PC-EFTPOS.</summary>
         /// <param name="key">An <see cref="EFTPOSKey" />.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoSendKey(EFTPOSKey key)
         {
             return DoRequest(new EFTSendKeyRequest() { Key = key });
@@ -234,7 +253,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Send entry data to PC-EFTPOS.</summary>
         /// <param name="data">Entry data collected by the POS.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         [Obsolete("DoSendEntryData is deprecated, please use DoSendKey(EFTPOSKey.Authorise, data) instead.")]
         public bool DoSendEntryData(string data)
         {
@@ -243,7 +262,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Send a request to PC-EFTPOS to open the control panel.</summary>
         /// <param name="request">An <see cref="ControlPanelRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoDisplayControlPanel(EFTControlPanelRequest request)
         {
             return DoRequest(request);
@@ -252,7 +271,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 #pragma warning disable CS0618
         /// <summary>Send a request to PC-EFTPOS to open the control panel.</summary>
         /// <param name="request">An <see cref="ControlPanelRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         [Obsolete("Please use bool DoDisplayControlPanel(EFTControlPanelRequest request)")]
         public bool DoDisplayControlPanel(ControlPanelRequest request)
         {
@@ -262,7 +281,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Send a request to PC-EFTPOS to initiate a settlement.</summary>
         /// <param name="request">An <see cref="EFTSettlementRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoSettlement(EFTSettlementRequest request)
         {
             return DoRequest(request);
@@ -270,7 +289,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Send a request to PC-EFTPOS for a PIN pad status.</summary>
         /// <param name="request">An <see cref="EFTStatusRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoStatus(EFTStatusRequest request)
         {
             return DoRequest(request);
@@ -278,14 +297,14 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Send a request to PC-EFTPOS for a cheque authorization.</summary>
         /// <param name="request">An <see cref="EFTChequeAuthRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoChequeAuth(EFTChequeAuthRequest request)
         {
             return DoRequest(request);
         }
 
         /// <summary>Send a request to PC-EFTPOS for a query card.</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoQueryCard(EFTQueryCardRequest request)
         {
             return DoRequest(request);
@@ -293,7 +312,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
 #pragma warning disable CS0618
         /// <summary>Send a request to PC-EFTPOS for a query card.</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         [Obsolete("Please use bool DoQueryCard(EFTQueryCardRequest request)")]
         public bool DoQueryCard(QueryCardRequest request)
         {
@@ -302,42 +321,42 @@ namespace PCEFTPOS.EFTClient.IPInterface
 #pragma warning restore CS0618
 
         /// <summary>Send a request to PC-EFTPOS to get password entry from the PIN pad.</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoGetPassword(EFTGetPasswordRequest request)
         {
             return DoRequest(request);
         }
 
         /// <summary>Send a request to PC-EFTPOS to pass a slave cmd to the PIN pad.</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoSlaveCommand(string command)
         {
             return DoRequest(new EFTSlaveRequest() { RawCommand = command });
         }
 
         /// <summary>Send a request to PC-EFTPOS for a merchant config.</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoConfigMerchant(EFTConfigureMerchantRequest request)
         {
             return DoRequest(request);
         }
 
         /// <summary>Send a cloud logon request to PC-EFTPOS .</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoCloudLogon(EFTCloudLogonRequest request)
         {
             return DoRequest(request);
         }
 
         /// <summary>Send a cloud pairing request to PC-EFTPOS .</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoCloudPairing(EFTCloudPairRequest request)
         {
             return DoRequest(request);
         }
 
         /// <summary>Send a cloud logon request to PC-EFTPOS using a token .</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         public bool DoCloudTokenLogon(EFTCloudTokenLogonRequest request)
         {
             return DoRequest(request);
@@ -376,19 +395,31 @@ namespace PCEFTPOS.EFTClient.IPInterface
             }
         }
 
+
         void Initialise()
         {
             recvBuf = "";
             recvTickCount = 0;
             _parser = new DefaultMessageParser();
 
-            socket = new TcpSocket(HostName, HostPort);
-            socket.OnTerminated += new TcpSocketEventHandler(TcpSocketOnTerminated);
-            socket.OnDataWaiting += new TcpSocketEventHandler(TcpSocketOnDataWaiting);
-            socket.OnError += new TcpSocketEventHandler(TcpSocketOnError);
-            socket.OnSend += new TcpSocketEventHandler(TcpSocketOnSend);
+            _socket = _createSocketDelegate(HostName, HostPort);
+
+            // this should never actually happen unless the protected constructor is called in a borked way,
+            // but just in case
+            if (_socket == null)
+                throw new NullReferenceException($"Wrapped socket is null");
+
+            _socket.OnTerminated += new TcpSocketEventHandler(TcpSocketOnTerminated);
+            _socket.OnDataWaiting += new TcpSocketEventHandler(TcpSocketOnDataWaiting);
+            _socket.OnError += new TcpSocketEventHandler(TcpSocketOnError);
+            _socket.OnSend += new TcpSocketEventHandler(TcpSocketOnSend);
 
             hideDialogEvent = new AutoResetEvent(false);
+        }
+
+        ITcpSocket CreateTcpSocket(string hostName, int port)
+        {
+            return new TcpSocket(hostName, port);
         }
 
         bool WaitForIPClientResponse(AutoResetEvent ResetEvent)
@@ -428,7 +459,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
                         break;
 
                     case EFTDisplayResponse r:
-                        //DialogUIHandler.HandleDisplayResponse(r);
+                        //DialogUIHandler?.HandleDisplayResponse(r);
                         FireClientResponseEvent(nameof(OnDisplay), OnDisplay, new EFTEventArgs<EFTDisplayResponse>(r));
                         break;
 
@@ -505,7 +536,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         void SendReceiptAcknowledgement()
         {
-            socket.Send("#00073 ");
+            _socket.Send("#00073 ");
         }
 
 
@@ -524,14 +555,14 @@ namespace PCEFTPOS.EFTClient.IPInterface
             }
             catch (Exception e)
             {
-                Log(LogLevel.Error, tr => tr.Set($"An error occured parsing the request", e));
+                Log(LogLevel.Error, tr => tr.Set($"An error occurred parsing the request", e));
                 throw;
             }
 
             Log(LogLevel.Debug, tr => tr.Set($"Tx {requestString}"));
 
             // Send the request string to the IP client.
-            return socket.Send(requestString);
+            return _socket.Send(requestString);
         }
 
         private void SetCurrentRequest(EFTRequest request)
@@ -610,7 +641,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
                             ProcessEFTResponse(eftResponse);
                             if (eftResponse.GetType() == _currentStartTxnRequest?.GetPairedResponseType())
                             {
-                                dialogUIHandler.HandleCloseDisplay();
+                                dialogUIHandler?.HandleCloseDisplay();
                             }
                         }
                         catch (ArgumentException argumentException)
@@ -639,6 +670,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
             return true;
         }
+
 
         #endregion
 
@@ -734,9 +766,9 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// </summary>
         public bool CheckConnectState()
         {
-            if (socket == null)
+            if (_socket == null)
                 return false;
-            return socket.CheckConnectState();
+            return _socket.CheckConnectState();
         }
 
         #endregion
@@ -765,7 +797,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         public bool IsRequestInProgress { get { return requestInProgess; } }
 
         /// <summary>Indicates whether EFT Client is currently connected.</summary>
-        public bool IsConnected { get { return socket.IsConnected; } }
+        public bool IsConnected { get { return _socket.IsConnected; } }
 
         /// <summary> When TRUE, the SynchronizationContext will be captured from requests and used to call events</summary>
         public bool UseSynchronizationContextForEvents { get; set; } = true;
@@ -785,7 +817,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             set
             {
                 dialogUIHandler = value;
-                if (dialogUIHandler.EFTClientIP == null)
+                if (dialogUIHandler != null && dialogUIHandler.EFTClientIP == null)
                 {
                     dialogUIHandler.EFTClientIP = this;
                 }

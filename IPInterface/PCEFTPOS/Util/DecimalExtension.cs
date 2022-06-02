@@ -25,7 +25,9 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <exception cref="ArgumentOutOfRangeException">Thrown if the number is too long for the totalWidth provided</exception>
         public static string PadLeftAsInt(this decimal v, int totalWidth)
         {
-            var s = String.Format($"{{0:D{totalWidth}}}", (int)(v * 100));
+
+            // have to account for the "-" character for negative inputs
+            var s =  String.Format($"{{0:D{(v < 0 ? totalWidth - 1 : totalWidth)}}}", (int)(v * 100));
             if (s.Length > totalWidth)
                 throw new ArgumentOutOfRangeException(nameof(totalWidth), $"The number '{v}' cannot fit in a padded string of length:{totalWidth}");
             return s;

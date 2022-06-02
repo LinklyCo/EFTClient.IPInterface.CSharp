@@ -84,50 +84,25 @@
         <Style x:Key="InputBoxStyle" BasedOn="{StaticResource BaseTextBoxStyle}" TargetType="TextBox">
            
             <Style.Triggers>
-                <DataTrigger Binding="{Binding DisplayDetails.InputType}" Value="None">
+                <DataTrigger Binding="{Binding InputTypeString}" Value="None">
                     <Setter Property="Visibility" Value="Collapsed"/>
                 </DataTrigger>
-                <DataTrigger Binding="{Binding DisplayDetails.InputType}" Value="Password">
+                <DataTrigger Binding="{Binding InputTypeString}" Value="Password">
                     <Setter Property="Visibility" Value="Collapsed"/>
                 </DataTrigger>
-                <DataTrigger Binding="{Binding DisplayDetails.InputType}" Value="Decimal">
-                        <Setter Property="Text">
-                            <Setter.Value>
-                                <Binding StringFormat="{}{0:F2}"/>
-                        </Setter.Value>
-                        </Setter>
-                    </DataTrigger>
-                <DataTrigger Binding="{Binding DisplayDetails.InputType}" Value="Amount">
-                    <Setter Property="Text">
-                        <Setter.Value>
-                            <Binding StringFormat="{}}{0:C2}"/>
-                        </Setter.Value>
-                    </Setter>
+                <DataTrigger Binding="{Binding InputTypeString}" Value="Decimal">
+                    <Setter Property="Text"><Setter.Value><Binding StringFormat="{}{0:F2}"/></Setter.Value></Setter>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding InputTypeString}" Value="Amount">
+                    <Setter Property="Text"><Setter.Value><Binding StringFormat="{}{0:C2}"/></Setter.Value></Setter>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
         <Style x:Key="InputPasswordStyle" BasedOn="{StaticResource BasePasswordBoxStyle}" TargetType="PasswordBox">
+            <Setter Property="Visibility" Value="Collapsed"/>
             <Style.Triggers>
-                <DataTrigger Binding="{Binding DisplayDetails.InputType}" Value="None">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding DisplayDetails.InputType}" Value="Normal">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding DisplayDetails.InputType}" Value="Amount">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding DisplayDetails.InputType}" Value="Decimal">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding DisplayDetails.InputType}" Value="Password">
+                <DataTrigger Binding="{Binding InputTypeString}" Value="Password">
                     <Setter Property="Visibility" Value="Visible"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding DisplayDetails.InputType}" Value="Char">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding DisplayDetails.InputType}" Value="BarCode">
-                    <Setter Property="Visibility" Value="Collapsed"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -252,24 +227,35 @@
                                             <Ellipse x:Name="ellipse5" Canvas.Left="34.75" Canvas.Top="34.5"/>
                                             <Ellipse x:Name="ellipse6" Canvas.Left="20.75" Canvas.Top="39.75"/>
                                             <Ellipse x:Name="ellipse7" Canvas.Top="34.25" Canvas.Left="7" />
-                                            <Ellipse Width="39.5" Height="39.5" Canvas.Left="8.75" Canvas.Top="8" Visibility="Hidden"/>
+                                            <Ellipse Width="39.5" Height="39.5" Canvas.Left="8.75" Canvas.Top="8" Visibility="Collapsed"/>
                                         </Canvas>
                                     </Grid>
                                 </Border>
                             </ControlTemplate>
                         </Setter.Value>
                     </Setter>
-                    <Setter Property="Visibility" Value="Hidden"/>
+                    <Setter Property="Visibility" Value="Collapsed"/>
                 </Style>
             </UserControl.Resources>
             <Control Style="{StaticResource BusyAnimationStyle}" />
         </UserControl>
-        <TextBox x:Name="txtBxInput" Style="{StaticResource InputBoxStyle}" Text="{Binding KeyData, StringFormat={}{0:F}}" />
-        <PasswordBox x:Name="pwordInput" Style="{StaticResource InputPasswordStyle}" />
+        <Image Source="{Binding QRImage, UpdateSourceTrigger=PropertyChanged}"/>
+        <TextBox x:Name="txtBxInput" Style="{StaticResource InputBoxStyle}" Text="{Binding KeyData, StringFormat={}{0:F}}">
+            <TextBox.InputBindings>
+                <KeyBinding Key="Enter"  Command="{Binding SendKeyCommand}" CommandParameter="OK"/>
+                <KeyBinding Key="Return" Command="{Binding SendKeyCommand}" CommandParameter="OK"/>
+            </TextBox.InputBindings>
+        </TextBox>
+        <PasswordBox x:Name="pwordInput" Style="{StaticResource InputPasswordStyle}">
+            <PasswordBox.InputBindings>
+                <KeyBinding Key="Enter"  Command="{Binding SendKeyCommand}" CommandParameter="OK"/>
+                <KeyBinding Key="Return" Command="{Binding SendKeyCommand}" CommandParameter="OK"/>
+            </PasswordBox.InputBindings>
+        </PasswordBox>
         <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Width="350">
-            <Button x:Name="btnCancelButton" Style="{StaticResource CancelButtonStyle}" Command="{Binding SendKeyCommand}" CommandParameter="{Binding ElementName=btnCancelButton, Path=Content}"/>
-            <Button x:Name="btnLeftButton" Style="{StaticResource LeftMostButtonStyle}" Command="{Binding SendKeyCommand}" CommandParameter="{Binding ElementName=btnLeftButton, Path=Content}"/>
-            <Button x:Name="btnRightButton" Style="{StaticResource RightMostButtonStyle}" Command="{Binding SendKeyCommand}" CommandParameter="{Binding ElementName=btnRightButton, Path=Content}"/>
+            <Button x:Name="btnCancelButton" Style="{StaticResource CancelButtonStyle}"    Command="{Binding SendKeyCommand}" CommandParameter="{Binding ElementName=btnCancelButton, Path=Content}"/>
+            <Button x:Name="btnLeftButton"   Style="{StaticResource LeftMostButtonStyle}"  Command="{Binding SendKeyCommand}" CommandParameter="{Binding ElementName=btnLeftButton,   Path=Content}"/>
+            <Button x:Name="btnRightButton"  Style="{StaticResource RightMostButtonStyle}" Command="{Binding SendKeyCommand}" CommandParameter="{Binding ElementName=btnRightButton,  Path=Content}"/>
         </StackPanel>
     </StackPanel>
 </Window>

@@ -58,20 +58,17 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.Views
 
             object[] attribArray = fieldInfo.GetCustomAttributes(false);
 
-            if (attribArray.Length == 0)
+            foreach(object attrib in attribArray)
             {
-                return enumObj.ToString();
+                if (attrib is DescriptionAttribute desc)
+                    return desc.Description;
             }
-            else
-            {
-                DescriptionAttribute attrib = attribArray[0] as DescriptionAttribute;
-                return attrib.Description;
-            }
+            return enumObj.ToString();
         }
 
         object IValueConverter.Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            Enum myEnum = (Enum)value;
+            Enum myEnum = value as Enum;
             if (myEnum == null)
             {
                 return null;

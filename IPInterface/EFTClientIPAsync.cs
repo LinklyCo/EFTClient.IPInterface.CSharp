@@ -41,47 +41,66 @@ namespace PCEFTPOS.EFTClient.IPInterface
             Parser = new DefaultMessageParser();
         }
 
-        public async Task<bool> ConnectAsync(string hostName, int hostPort, bool useSSL = false, bool useKeepAlive = false)
+        private ITcpSocketAsync CreateTcpSocketAsync(bool useSSL)
+        {
+            ITcpSocketAsync clientStream;
+            if (useSSL)
+            {
+                // Check if there are any custom root certificates to load
+                var tcp = new TcpSocketSslAsync();
+                try
+                {
+                    var extns = new string[] { ".der", ".pem" };
+                    var certs = from f in Directory.EnumerateFiles(Directory.GetCurrentDirectory())
+                        where extns.Contains((new FileInfo(f)).Extension)
+                        select f;
+                    tcp.CustomeRootCerts = certs?.ToList();
+                }
+                catch (Exception ex)
+                {
+                    Log(LogLevel.Error, tr => tr.Set($"Failed to get certs: {ex.Message}"));
+                }
+
+                clientStream = tcp;
+            }
+            else
+            {
+                clientStream = new TcpSocketAsync();
+            }
+
+            return clientStream;
+        }
+
+
+        /// <summary>
+        /// Closes and Disposes the wrapped client stream
+        /// </summary>
+        protected void DisposeClientStream()
+        {
+            if (_clientStream != null)
+            {
+                _clientStream.LogLevel -= (int)LogLevel;
+                _clientStream.OnLog -= ClientStreamOnLog;
+                _clientStream.Close();
+                _clientStream.Dispose();
+                _clientStream = null;
+            }
+        }
+
+        protected async Task<bool> ConnectAsync(Func<bool, ITcpSocketAsync> socketFactory, string hostName, int hostPort, 
+            bool useSSL = false, bool useKeepAlive = false)
         {
             try
             {
                 // If we already have an existing _clientStream we need to clean it up before creating a new one
-                if (_clientStream != null)
-                {
-                    _clientStream.LogLevel -= (int)LogLevel;
-                    _clientStream.OnLog -= ClientStreamOnLog;
-                    _clientStream.Close();
-                    _clientStream = null;
-                }
+                DisposeClientStream();
 
                 _hostName = hostName;
                 _hostPort = hostPort;
                 _useSSL = useSSL;
                 _useKeepAlive = useKeepAlive;
 
-                if (useSSL)
-                {
-                    // Check if there are any custom root certificates to load
-                    var tcp = new TcpSocketSslAsync();
-                    try
-                    {
-                        var extns = new string[] { ".der", ".pem" };
-                        var certs = from f in Directory.EnumerateFiles(Directory.GetCurrentDirectory())
-                                    where extns.Contains((new FileInfo(f)).Extension)
-                                    select f;
-                        tcp.CustomeRootCerts = certs?.ToList();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log(LogLevel.Error, tr => tr.Set($"Failed to get certs: {ex.Message}"));
-                    }
-
-                    _clientStream = tcp;
-                }
-                else
-                {
-                    _clientStream = new TcpSocketAsync();
-                }
+                _clientStream = socketFactory(useSSL);
 
                 _clientStream.LogLevel = LogLevel;
                 _clientStream.OnLog += ClientStreamOnLog;
@@ -106,6 +125,11 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 Log(LogLevel.Error, tr => tr.Set($"Error connecting to {hostName}:{hostPort} with SSL {useSSL}", ex));
                 throw new ConnectionException(ex.Message, ex.InnerException);
             }
+        }
+
+        public async Task<bool> ConnectAsync(string hostName, int hostPort, bool useSSL = false, bool useKeepAlive = false)
+        {
+            return await ConnectAsync(CreateTcpSocketAsync, hostName, hostPort, useSSL, useKeepAlive);
         }
 
         private void ClientStreamOnLog(object sender, LogEventArgs e)
@@ -192,24 +216,26 @@ namespace PCEFTPOS.EFTClient.IPInterface
             }
             catch (Exception e)
             {
-                Log(LogLevel.Error, tr => tr.Set($"An error occured parsing the request", e));
+                Log(LogLevel.Error, tr => tr.Set($"An error occurred parsing the request", e));
                 throw;
             }
+
+            if (_clientStream == null)
+                throw new InvalidOperationException($"Cannot send a request when not connected to client. Try calling {nameof(ConnectAsync)}");
 
             Log(LogLevel.Debug, tr => tr.Set($"Tx {msgString}"));
 
             // Send the request string to the IP client.
             try
             {
-                await _clientStream.WriteRequestAsync(msgString);
+                return await _clientStream.WriteRequestAsync(msgString);
             }
             catch (Exception e)
             {
-                Log(LogLevel.Error, tr => tr.Set($"An error occured sending the request", e));
+                Log(LogLevel.Error, tr => tr.Set($"An error occurred sending the request", e));
                 Disconnect();
                 throw new ConnectionException(e.Message, e.InnerException);
             }
-            return true;
         }
 
         /// <summary>
@@ -272,6 +298,10 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <exception cref="TaskCanceledException">The task was cancelled by cancellationToken</exception>
         public async Task<EFTResponse> ReadResponseAsync(System.Threading.CancellationToken cancellationToken)
         {
+
+            if (_clientStream == null)
+                throw new InvalidOperationException($"Cannot read a response when not connected to client. Try calling {nameof(ConnectAsync)}");
+
             // Clear the receive buffer if we have been waiting for more than 
             // 5 seconds for the remaining parts of the message to arrive
             var tc = System.Environment.TickCount;
@@ -299,7 +329,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 }
                 catch (Exception e)
                 {
-                    Log(LogLevel.Error, tr => tr.Set($"An error occured sending the request", e));
+                    Log(LogLevel.Error, tr => tr.Set($"An error occurred reading the response", e));
                     Disconnect();
                     throw new ConnectionException(e.Message, e.InnerException);
                 }
@@ -516,7 +546,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             set
             {
                 dialogUIHandlerAsync = value;
-                if (dialogUIHandlerAsync.EFTClientIPAsync == null)
+                if (dialogUIHandlerAsync != null && dialogUIHandlerAsync.EFTClientIPAsync == null)
                 {
                     dialogUIHandlerAsync.EFTClientIPAsync = this;
                 }
@@ -537,7 +567,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             {
                 if (disposing)
                 {
-                    _clientStream?.Close();
+                    DisposeClientStream();
                 }
 
                 disposedValue = true;

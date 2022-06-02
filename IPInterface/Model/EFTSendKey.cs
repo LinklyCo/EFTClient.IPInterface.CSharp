@@ -18,7 +18,13 @@
 
         [Description("Authorise ('3')")]
         /// <summary>The AUTH key.</summary>
-        Authorise = '3'
+        Authorise = '3',
+
+        [Filter("Woolworths"), Description("Barcode ('B')")]
+        Barcode = 'B',
+
+        [Filter("Woolworths"), Description("Keyed ('K')")]
+        Keyed = 'K'
     }
 
     /// <summary>A PC-EFTPOS client list request object.</summary>

@@ -81,11 +81,11 @@ namespace PCEFTPOS.EFTClient.IPInterface
         bool DoRequest(EFTRequest request, [CallerMemberName] string member = "");
 
         /// <summary>Hide the PC-EFTPOS dialogs.</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoHideDialogs();
 
         /// <summary>Initiate a PC-EFTPOS logon using default values.</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoLogon();
 
         /// <summary>Initiate a PC-EFTPOS logon.</summary>
@@ -95,96 +95,96 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Initiate a PC-EFTPOS transaction.</summary>
         /// <param name="request">An <see cref="EFTTransactionRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoTransaction(EFTTransactionRequest request);
 
         /// <summary>Initiate a PC-EFTPOS get last transaction.</summary>
         /// <param name="request">An <see cref="EFTGetLastTransactionRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoGetLastTransaction(EFTGetLastTransactionRequest request);
 
         /// <summary>Initiate a PC-EFTPOS duplicate receipt request.</summary>
         /// <param name="request">An <see cref="EFTReprintReceiptRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoDuplicateReceipt(EFTReprintReceiptRequest request);
 
         /// <summary>Send a key to PC-EFTPOS.</summary>
         /// <param name="request">An <see cref="EFTSendKeyRequest" />.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoSendKey(EFTSendKeyRequest request);
 
         /// <summary>Send a key to PC-EFTPOS.</summary>
         /// <param name="key">An <see cref="EFTPOSKey" />.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoSendKey(EFTPOSKey key);
 
         /// <summary>Send entry data to PC-EFTPOS.</summary>
         /// <param name="data">Entry data collected by the POS.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         [Obsolete("DoSendEntryData is deprecated, please use DoSendKey(EFTPOSKey.Authorise, data) instead.")]
         bool DoSendEntryData(string data);
 
 #pragma warning disable CS0618
         /// <summary>Send a request to PC-EFTPOS to open the control panel.</summary>
         /// <param name="request">An <see cref="ControlPanelRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         [Obsolete("Please use DoDisplayControlPanel(EFTControlPanelRequest request)")]
         bool DoDisplayControlPanel(ControlPanelRequest request);
 #pragma warning restore CS0618
 
         /// <summary>Send a request to PC-EFTPOS to open the control panel.</summary>
         /// <param name="request">An <see cref="ControlPanelRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoDisplayControlPanel(EFTControlPanelRequest request);
 
         /// <summary>Send a request to PC-EFTPOS to initiate a settlement.</summary>
         /// <param name="request">An <see cref="EFTSettlementRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoSettlement(EFTSettlementRequest request);
 
         /// <summary>Send a request to PC-EFTPOS for a PIN pad status.</summary>
         /// <param name="request">An <see cref="EFTStatusRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoStatus(EFTStatusRequest request);
 
         /// <summary>Send a request to PC-EFTPOS for a cheque authorization.</summary>
         /// <param name="request">An <see cref="EFTChequeAuthRequest" /> object.</param>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoChequeAuth(EFTChequeAuthRequest request);
 
         /// <summary>Send a request to PC-EFTPOS for a query card.</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoQueryCard(EFTQueryCardRequest request);
 
 #pragma warning disable CS0618
         /// <summary>Send a request to PC-EFTPOS for a query card.</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         [Obsolete("Please use DoQueryCard(EFTQueryCardRequest request)")]
         bool DoQueryCard(QueryCardRequest request);
 #pragma warning restore CS0618
 
         /// <summary>Send a request to PC-EFTPOS to get password entry from the PIN pad.</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoGetPassword(EFTGetPasswordRequest request);
 
         /// <summary>Send a request to PC-EFTPOS to pass a slave cmd to the PIN pad.</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoSlaveCommand(string command);
 
         /// <summary>Send a request to PC-EFTPOS for a merchant config.</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoConfigMerchant(EFTConfigureMerchantRequest request);
 
         /// <summary>Send a cloud logon request to PC-EFTPOS .</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoCloudLogon(EFTCloudLogonRequest request);
 
         /// <summary>Send a cloud pairing request to PC-EFTPOS .</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoCloudPairing(EFTCloudPairRequest request);
 
         /// <summary>Send a cloud logon request to PC-EFTPOS using a token .</summary>
-        /// <returns>FALSE if an error occured.</returns>
+        /// <returns>FALSE if an error occurred.</returns>
         bool DoCloudTokenLogon(EFTCloudTokenLogonRequest request);
 
         /// <summary>Clears the request in progress flag.</summary>

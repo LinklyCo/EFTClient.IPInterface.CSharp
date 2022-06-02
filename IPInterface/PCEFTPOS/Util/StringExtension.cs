@@ -71,7 +71,7 @@
         public static int StrLen(this string v, int startIndex)
         {
             int idx = v.IndexOf('\0', startIndex);
-            return (idx < 0) ? v.Length : idx;
+            return (idx < 0) ? v.Length - startIndex : idx - startIndex;
         }
 
         /// <summary>

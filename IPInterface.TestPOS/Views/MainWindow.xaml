@@ -32,11 +32,14 @@
 
         <Style x:Key="TabControlEnabledStyle" TargetType="TabControl">
             <Style.Triggers>
-                <DataTrigger Binding="{Binding  Data.ConnectedState}" Value="0">
+                <DataTrigger Binding="{Binding Data.ConnectedState}" Value="0">
                     <Setter Property="IsEnabled" Value="True"/>
                 </DataTrigger>
-                <DataTrigger Binding="{Binding  Data.ConnectedState}" Value="1">
+                <DataTrigger Binding="{Binding Data.ConnectedState}" Value="1">
                     <Setter Property="IsEnabled" Value="False"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Data.ConnectedState}" Value="2">
+                    <Setter Property="IsEnabled" Value="True"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -75,9 +78,7 @@
             <Setter Property="Width" Value="160" />
         </Style>
 
-        <Style TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
-
-        </Style>
+        <Style TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}"/>
 
         <Style TargetType="Button" x:Key="SmallButtonStyle" BasedOn="{StaticResource BaseButtonStyle}">
             <Setter Property="Height" Value="25" />
@@ -125,6 +126,9 @@
                 <DataTrigger Binding="{Binding Data.ConnectedState}" Value="1">
                     <Setter Property="Content" Value="Connect"/>
                 </DataTrigger>
+                <DataTrigger Binding="{Binding Data.ConnectedState}" Value="2">
+                    <Setter Property="Content" Value="Disconnect"/>
+                </DataTrigger>
             </Style.Triggers>
             <Setter Property="IsEnabled" Value="True"/>
         </Style>
@@ -139,6 +143,10 @@
                     <Setter Property="Content" Value="Disconnected"/>
                     <Setter Property="Foreground" Value="Red"/>
                 </DataTrigger>
+                <DataTrigger Binding="{Binding Data.ConnectedState}" Value="2">
+                    <Setter Property="Content" Value="Auto-Connect"/>
+                    <Setter Property="Foreground" Value="YellowGreen"/>
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -151,7 +159,7 @@
             <Setter Property="FontSize" Value="13"/>
         </Style>
 
-        <Style TargetType="CheckBox">
+        <Style TargetType="CheckBox"  x:Key="BaseCheckBoxStyle">
             <Setter Property="HorizontalAlignment" Value="Left"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="FontSize" Value="12"/>
@@ -159,10 +167,7 @@
             <Setter Property="Height" Value="25"/>
         </Style>
 
-        <Style TargetType="ComboBox">
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="FontSize" Value="12"/>
-        </Style>
+        <Style TargetType="CheckBox" BasedOn="{StaticResource BaseCheckBoxStyle}"/>
 
         <Style x:Key="AcctTypeWrapPanelStyle" TargetType="WrapPanel">
             <Style.Triggers>
@@ -270,15 +275,31 @@
 
         <Style x:Key="ConnectedWrapPanelStyle" TargetType="WrapPanel">
             <Style.Triggers>
+                <DataTrigger Binding="{Binding Data.ConnectedState}" Value="0">
+                    <Setter Property="IsEnabled" Value="False"/>
+                </DataTrigger>
                 <DataTrigger Binding="{Binding Data.ConnectedState}" Value="1">
                     <Setter Property="IsEnabled" Value="True"/>
                 </DataTrigger>
-                <DataTrigger Binding="{Binding Data.ConnectedState}" Value="0">
+                <DataTrigger Binding="{Binding Data.ConnectedState}" Value="2">
                     <Setter Property="IsEnabled" Value="False"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="ConnectedCheckBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource BaseCheckBoxStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Data.ConnectedState}" Value="0">
+                    <Setter Property="IsEnabled" Value="False"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Data.ConnectedState}" Value="1">
+                    <Setter Property="IsEnabled" Value="True"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Data.ConnectedState}" Value="2">
+                    <Setter Property="IsEnabled" Value="False"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
 
     </Window.Resources>
 
@@ -291,7 +312,7 @@
         </Grid.RowDefinitions>
 
         <!-- HEADER CONNECT PANEL -->
-        <Expander x:Name="ExSettings" Grid.Row="0" Header="Settings" Foreground="WhiteSmoke" IsExpanded="{Binding Data.IsSettingsShown}" DockPanel.Dock="Top">
+        <Expander x:Name="ExSettings" Grid.Row="0" Header="Settings" Foreground="WhiteSmoke" IsExpanded="{Binding Data.IsSettingsShown}">
 
             <Expander.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -325,40 +346,41 @@
                                         HorizontalAlignment="Right" Command="{Binding ConnectToEndpointCommand}"/>
                         </StackPanel>
                     </Border>
-                    <Border Background="WhiteSmoke" CornerRadius="5" BorderThickness="1" BorderBrush="LightGray" Width="422" Margin="8,8,4,8" Padding="0,4,0,0">
-                        <StackPanel>
-                            <WrapPanel Style="{StaticResource ReceiptOptionsWrapPanelStyle}" x:Name="spReceipt" VerticalAlignment="Top" HorizontalAlignment="Left" Width="470">
-                                <Label Content="Receipt Print Type:" Width="120" Margin="0,0,0,2" FontSize="12"/>
-                                <ComboBox x:Name="cboPrintType" Width="178" Margin="0,0,0,2" ItemsSource="{Binding Data.PrintModeList}" 
+                    <Border Background="WhiteSmoke" CornerRadius="5" BorderThickness="1" BorderBrush="LightGray" Width="600" Margin="8,8,4,8" Padding="0,4,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel>
+                                <WrapPanel Style="{StaticResource ReceiptOptionsWrapPanelStyle}" x:Name="spReceipt" VerticalAlignment="Top" HorizontalAlignment="Left" Width="300">
+                                    <Label Content="Receipt Print Type:" Width="120" Margin="0,0,0,2" FontSize="12"/>
+                                    <ComboBox x:Name="cboPrintType" Width="178" Margin="0,0,0,2" ItemsSource="{Binding Data.PrintModeList}" 
                                                 SelectedItem="{Binding Data.PrintMode}" SelectedIndex="0" FontSize="12">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Converter={StaticResource enumDescriptionConverter}}"/>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
-                                <CheckBox x:Name="chkMCutMode" Content="Cut Receipt" VerticalAlignment="Center" VerticalContentAlignment="Center" 
-                                            Width="90" Margin="8,0,0,2" IsChecked="{Binding Data.CutReceipt}"/>
-                            </WrapPanel>
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Converter={StaticResource enumDescriptionConverter}}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </WrapPanel>
 
-                            <WrapPanel VerticalAlignment="Top" HorizontalAlignment="Left" >
-                                <Label Content="Response Dialogs:" Width="120" Margin="0,2,0,2" FontSize="12"/>
-                                <ComboBox x:Name="cboDemoDialogType" Width="178" Margin="0,2,0,2" ItemsSource="{Binding Data.DemoDialogTypeList}" 
+                                <WrapPanel VerticalAlignment="Top" HorizontalAlignment="Left" >
+                                    <Label Content="Response Dialogs:" Width="120" Margin="0,2,0,2" FontSize="12"/>
+                                    <ComboBox x:Name="cboDemoDialogType" Width="178" Margin="0,2,0,2" ItemsSource="{Binding Data.DemoDialogTypeList}" 
                                                 SelectedItem="{Binding Data.DemoDialogType}" SelectedIndex="0" FontSize="12">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Converter={StaticResource enumDescriptionConverter}}"/>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
-                                <CheckBox x:Name="chkHideDialogs" Content="Hide Dialogs" Width="90" VerticalAlignment="Center" 
-                                          VerticalContentAlignment="Center" Margin="8,0,0,0" IsEnabled="{Binding IsEnabled, ElementName=tbMenu}"
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Converter={StaticResource enumDescriptionConverter}}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </WrapPanel>
+                            </StackPanel>
+                            <WrapPanel Width="300">
+                                <CheckBox x:Name="chkMCutMode"    Content="Cut Receipt"  Width="90" Margin="8,0,0,2" IsChecked="{Binding Data.CutReceipt}"/>
+                                <CheckBox x:Name="chkHideDialogs" Content="Hide Dialogs" Width="90" Margin="8,0,0,2" IsEnabled="{Binding IsEnabled, ElementName=tbMenu}"
                                           Command="{Binding HideDialog}" CommandParameter="{Binding IsChecked, ElementName=chkHideDialogs}" />
-                            </WrapPanel>
-                            
-                            <WrapPanel VerticalAlignment="Top" HorizontalAlignment="Left">
-                                <CheckBox x:Name="chkShowLog" Content="Show Log" Margin="5,2,0,0" IsChecked="{Binding Data.Settings.IsLogShown}"/>
-                                <CheckBox Content="Woolworths POS" Margin="5,2,0,0" IsChecked="{Binding Data.Settings.IsWoolworthsPOS}"/>
+                                <CheckBox x:Name="chkShowLog"     Content="Show Log"     Width="90" Margin="8,0,0,2" IsChecked="{Binding Data.Settings.IsLogShown}"/>
+                                <CheckBox x:Name="chkWooliesPOS"  Content="Woolies POS"  Width="90" Margin="8,0,0,2" Style="{StaticResource ConnectedCheckBoxStyle}" IsChecked="{Binding Data.IsWoolworthsPOS}" ToolTip="- Allows Status/KeySend to cancel J8&#x0a;- Enables auto-connect mode (i.e. only connected when request is active)&#x0a;- Enables 'B'/'K' Send Key types"/>
+
+                                <Button   x:Name="btnResetFields" Content="Reset Fields" Width="90" Margin="8,0,0,2" Click="Button_ResetFields" Style="{Binding SmallButtonStyle}"/>
                             </WrapPanel>
                         </StackPanel>
                     </Border>
@@ -371,7 +393,8 @@
         <!-- MAINGRID CONTENT -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="21*"/>
+                <ColumnDefinition Width="773*"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="460"/>
             </Grid.ColumnDefinitions>
@@ -381,7 +404,7 @@
 
             <!-- TXN INPUT DETAILS -->
             <TabControl x:Name="tbMenu" TabStripPlacement="Left" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                        Style="{StaticResource TabControlEnabledStyle}" Grid.ColumnSpan="2">
+                        Style="{StaticResource TabControlEnabledStyle}" Grid.ColumnSpan="3">
                 <TabItem Header="Logon">
                     <StackPanel>
                         <WrapPanel HorizontalAlignment="Left" Margin="5" >
@@ -522,8 +545,7 @@
                             <Label x:Name="lblTPanSrc" Content="PAN Source" Height="27" Width="120" FontSize="12" />
                             <ComboBox x:Name="cboPanSource" HorizontalAlignment="Left" Width="128" Height="27" FontSize="12"
                                   ItemsSource="{Binding Data.CardSourceList}" 
-                                  SelectedItem="{Binding Data.TransactionRequest.CardPANSource}" 
-                                  Text="{Binding Data.SelectedCardSource}"
+                                  SelectedItem="{Binding Data.TransactionRequest.PanSource}" 
                                   SelectedIndex="0">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
@@ -602,17 +624,30 @@
                                     <Button x:Name="btnTPad" Content="..." Width="25" Margin="4,0,0,0" Command="{Binding LaunchPad}" Style="{Binding SmallButtonStyle}"/>
                                 </WrapPanel>
                                 <WrapPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                    <CheckBox x:Name="ChkTPADAppendRFN" Width="120" Content="Append Last RFN" IsChecked="{Binding Data.PADAppendLastRFN}" ToolTip="Transaction Reference Number, used for refunds&#x0a;e.g. RFN0101452369845"/>
-                                    <CheckBox x:Name="ChkTPADAppendSKU" Width="120" Content="Append SKU" IsChecked="{Binding Data.PADAppendSKU}" ToolTip="Unique identifier for the basket associated with this sale&#x0a;e.g. SKU008Test1234"/>
-                                    <CheckBox x:Name="ChkTPADAppendOPR" Width="120" Content="Append OPR" IsChecked="{Binding Data.PADAppendOPR}" ToolTip="POS operator name and id. (Format: ID|Name)&#x0a;e.g. OPR00766|test"/>
-                                    <CheckBox x:Name="ChkTPADAppendAMT" Width="120" Content="Append AMT" IsChecked="{Binding Data.PADAppendAMT}" ToolTip="Total Amount of the entire sale in cents, not Tender amount&#x0a;e.g. AMT0042000"/>
-                                    <CheckBox x:Name="ChkTPADAppendUID" Width="120" Content="Append UID" IsChecked="{Binding Data.PADAppendUID}" ToolTip="UUIDv4 used to track this sale&#x0a;e.g. UID0367f619126-5fa7-4351-8585-1d4f813019d2"/>
-                                    <CheckBox x:Name="ChkTPADAppendNME" Width="120" Content="Append NME" IsChecked="{Binding Data.PADAppendNME}" ToolTip="Name of POS, should match accreditation POS name&#x0a;e.g. NME007TestPOS"/>
-                                    <CheckBox x:Name="ChkTPADAppendVER" Width="120" Content="Append VER" IsChecked="{Binding Data.PADAppendVER}" ToolTip="Version of the POS&#x0a;e.g. VER0041.00"/>
-                                    <CheckBox x:Name="ChkTPADAppendVND" Width="120" Content="Append VND" IsChecked="{Binding Data.PADAppendVND}" ToolTip="POS Vendor ID provided by Linklyduring accreditation&#x0a;e.g. VND006TEST12"/>
-                                    <CheckBox x:Name="ChkTPADAppendPCM" Width="120" Content="Append PCM" IsChecked="{Binding Data.PADAppendPCM}" ToolTip="POS Capabilities Matrix.&#x0a;e.g. PCM00800000000"/>
-                                    <CheckBox x:Name="ChkTPADPCMBarcode" Width="120" Content="(PCM Barcode)" IsChecked="{Binding Data.PADPCMBarcode}" IsEnabled="{Binding ElementName=ChkTPADAppendPCM, Path=IsChecked, TargetNullValue=false}" ToolTip="Sets barcode enabled in the PCM Tag&#x0a;e.g. PCM00810000000"/>
+                                    <CheckBox x:Name="ChkTPADAppendRFN"  Width="120" Content="Append Last RFN" IsChecked="{Binding Data.PADAppendRFN}"  ToolTip="Transaction Reference Number, used for refunds&#x0a;e.g. RFN0101452369845"/>
+                                    <CheckBox x:Name="ChkTPADAppendSKU"  Width="120" Content="Append SKU"      IsChecked="{Binding Data.PADAppendSKU}"  ToolTip="Unique identifier for the basket associated with this sale&#x0a;e.g. SKU008Test1234"/>
+                                    <CheckBox x:Name="ChkTPADAppendOPR"  Width="120" Content="Append OPR"      IsChecked="{Binding Data.PADAppendOPR}"  ToolTip="POS operator name and id. (Format: ID|Name)&#x0a;e.g. OPR00766|test"/>
+                                    <CheckBox x:Name="ChkTPADAppendAMT"  Width="120" Content="Append AMT"      IsChecked="{Binding Data.PADAppendAMT}"  ToolTip="Total Amount of the entire sale in cents, not Tender amount&#x0a;e.g. AMT0042000"/>
+                                    <CheckBox x:Name="ChkTPADAppendUID"  Width="120" Content="Append UID"      IsChecked="{Binding Data.PADAppendUID}"  ToolTip="UUIDv4 used to track this sale&#x0a;e.g. UID0367f619126-5fa7-4351-8585-1d4f813019d2"/>
+                                    <CheckBox x:Name="ChkTPADAppendNME"  Width="120" Content="Append NME"      IsChecked="{Binding Data.PADAppendNME}"  ToolTip="Name of POS, should match accreditation POS name&#x0a;e.g. NME007TestPOS"/>
+                                    <CheckBox x:Name="ChkTPADAppendVER"  Width="120" Content="Append VER"      IsChecked="{Binding Data.PADAppendVER}"  ToolTip="Version of the POS&#x0a;e.g. VER0041.00"/>
+                                    <CheckBox x:Name="ChkTPADAppendVND"  Width="120" Content="Append VND"      IsChecked="{Binding Data.PADAppendVND}"  ToolTip="POS Vendor ID provided by Linklyduring accreditation&#x0a;e.g. VND006TEST12"/>
+                                    <CheckBox x:Name="ChkTPADAppendPCM"  Width="120" Content="Append PCM"      IsChecked="{Binding Data.PADAppendPCM}"  ToolTip="POS Capabilities Matrix.&#x0a;e.g. PCM00800000000"/>
+                                    <CheckBox x:Name="ChkTPADPCMBarcode" Width="120" Content="(PCM Barcode)"   IsChecked="{Binding Data.PADPCMBarcode}" ToolTip="Sets barcode enabled in the PCM Tag&#x0a;e.g. PCM00810000000" IsEnabled="{Binding ElementName=ChkTPADAppendPCM, Path=IsChecked, TargetNullValue=false}"/>
                                 </WrapPanel>
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="Query + Transaction" Margin="0,5,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <Label x:Name="lblTQueryType" Content="Query Type" Height="27" Width="120" FontSize="12" />
+                                <ComboBox x:Name="cboTranQueryType" HorizontalAlignment="Left" VerticalAlignment="Top" Width="320" Height="27" FontSize="12" 
+                                              ItemsSource="{Binding Data.QueryCardList}" SelectedItem="{Binding Data.SelectedQuery, UpdateSourceTrigger=PropertyChanged}" SelectedIndex="0">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={StaticResource enumDescriptionConverter}}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                             </StackPanel>
                         </GroupBox>
                         <WrapPanel>
@@ -640,11 +675,11 @@
                     <StackPanel >
                         <WrapPanel Margin="0,5,0,0">
                             <Label Content="Terminal Id" Width="120"/>
-                            <TextBox x:Name="txtCMTerId" Width="250" Text="{Binding Data.MerchantDetails.TerminalID}"></TextBox>
+                            <TextBox x:Name="txtCMTerId" Width="250" MaxLength="8" Text="{Binding Data.MerchantDetails.TerminalID}"></TextBox>
                         </WrapPanel>
                         <WrapPanel Margin="0,5,0,0">
                             <Label Content="Merchant Id" Width="120"/>
-                            <TextBox x:Name="txtCMMerId" Width="250" Text="{Binding Data.MerchantDetails.MerchantID}"></TextBox>
+                            <TextBox x:Name="txtCMMerId" Width="250" MaxLength="15" Text="{Binding Data.MerchantDetails.MerchantID}"></TextBox>
                         </WrapPanel>
                         <WrapPanel Margin="0,5,0,0">
                             <Label Content="NII" Width="120"/>
@@ -833,7 +868,7 @@
                                 <DockPanel VerticalAlignment="Top" HorizontalAlignment="Left" Margin="5">
                                     <Label Content="Display Type: " Height="35" Width="128"/>
                                     <ComboBox x:Name="cboQueryCardType" Height="25" Width="280"
-                                              ItemsSource="{Binding Data.QueryCardList}" SelectedItem="{Binding Data.SelectedQuery}" SelectedIndex="0">
+                                              ItemsSource="{Binding Data.QueryCardList}" SelectedItem="{Binding Data.SelectedQuery, UpdateSourceTrigger=PropertyChanged}" SelectedIndex="0">
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Converter={StaticResource enumDescriptionConverter}}"/>
@@ -1020,12 +1055,25 @@
                                 </Button>
                             </StackPanel>
                         </TabItem>
+                        <TabItem Header="Raw Data">
+                            <StackPanel>
+                                <Label x:Name="lblRawData" Content="Raw Data" Margin="5,0" Height="27" FontSize="12"  ToolTip="Leave out '#' and length. Hex bytes escaped with '\', literal '\' needs to be escaped"/>
+                                <TextBox x:Name="txtRawDataSend" Margin="5,0" Height="27" FontSize="12" Text="{Binding Data.RawData}"  ToolTip="{Binding ElementName=lblRawData, Path=ToolTip}"/>
+                                <Label x:Name="lblWaitTime" Content="Response wait time (secs)" Margin="5,0" Height="27" FontSize="12"  ToolTip="Time in seconds to wait for a response"/>
+                                <TextBox x:Name="txtWaitTime" Margin="5,0" Height="27" FontSize="12" Text="{Binding Data.RawDataWait}"  ToolTip="{Binding ElementName=lblWaitTime, Path=ToolTip}"/>
+                                <Button x:Name="btnRawDataSend" Command="{Binding SendRawData}" Content="Send">
+                                    <Button.Resources>
+                                        <Style TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}"/>
+                                    </Button.Resources>
+                                </Button>
+                            </StackPanel>
+                        </TabItem>
                     </TabControl>
                 </TabItem>
             </TabControl>
 
             <!--<GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch"/>-->
-            <GridSplitter Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Center" Width="8">
+            <GridSplitter Grid.Column="2" VerticalAlignment="Stretch" HorizontalAlignment="Center" Width="8">
                 <GridSplitter.Template>
                     <ControlTemplate TargetType="{x:Type GridSplitter}">
                         <Grid Margin="0" Background="#EEEEEE">
@@ -1036,19 +1084,19 @@
             </GridSplitter>
 
             <!-- RESULTS -->
-            <TabControl Grid.Column="2" MinHeight="150" SelectionChanged="tcUtilities_SelectionChanged">
+            <TabControl Grid.Column="3" MinHeight="150" SelectionChanged="tcUtilities_SelectionChanged">
                 <TabItem Header="Response" FontSize="12">
-                    <StackPanel>
-                        <Label Content="{Binding Data.LastTxnType}"/>
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-                            <DataGrid MinColumnWidth="200" ItemsSource="{Binding Data.LastTxnResult}" IsReadOnly="True" AutoGenerateColumns="False">
+                    <DockPanel>
+                        <Label DockPanel.Dock="Top" Content="{Binding Data.LastTxnRespType}" Padding="5,2,5,0"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Padding="2,0,2,2">
+                            <DataGrid MinColumnWidth="200" ItemsSource="{Binding Data.LastTxnResult}" IsReadOnly="True" AutoGenerateColumns="False" Padding="0">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Field" Binding="{Binding Key}" Width="220"/>
                                     <DataGridTextColumn Header="Value" Binding="{Binding Value}" MinWidth="220" Width="*"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </ScrollViewer>
-                    </StackPanel>
+                    </DockPanel>
                 </TabItem>
                 <TabItem Header="Receipt" FontSize="12">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
@@ -1061,8 +1109,8 @@
                 </TabItem>
                 <TabItem Header="Profiler" FontSize="12">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-                        <StackPanel>
-                            <Button x:Name="btnClearHistory" Content="Clear History" Command="{Binding ClearHistoryCommand}" FontSize="10" Height="20" HorizontalAlignment="Stretch" Margin="0,5,0,0"/>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Top" x:Name="btnClearHistory" Content="Clear History" Command="{Binding ClearHistoryCommand}" FontSize="10" Height="20" HorizontalAlignment="Stretch" Margin="0,5,0,0"/>
                             <DataGrid MinColumnWidth="50"  ItemsSource="{Binding Data.MessageHistory}" IsReadOnly="True" AutoGenerateColumns="False" Margin="5,0,5,0">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Command" Binding="{Binding Command}" Width="*" />
@@ -1071,7 +1119,7 @@
                                     <DataGridTextColumn Header="Diff"    Binding="{Binding Diff}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
-                        </StackPanel>
+                        </DockPanel>
                     </ScrollViewer>
                 </TabItem>
             </TabControl>
@@ -1080,7 +1128,7 @@
         <!-- UTILITIES CONTENT -->
 
         <!--<GridSplitter Grid.Row="2" Height="8" HorizontalAlignment="Stretch" />-->
-        <GridSplitter Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Center" Height="8" >
+        <GridSplitter Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Center" Height="8">
             <GridSplitter.Template>
                 <ControlTemplate TargetType="{x:Type GridSplitter}">
                     <Grid Background="#EEEEEE">
@@ -1120,13 +1168,19 @@
                             </Style.Triggers>
                         </Style>
                     </TabItem.Resources>
-                    <ScrollViewer x:Name="svLog" VerticalScrollBarVisibility="Auto" 
-                                      VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-                        <TextBox x:Name="tbLog" IsEnabled="True" IsReadOnly="False" FontSize="12" MinWidth="350" 
-                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch" AcceptsReturn="True"
-                                    TextWrapping="Wrap" HorizontalContentAlignment="Left" VerticalContentAlignment="Top"
-                                    Background="#FFEEEEF7" Text="{Binding Data.LogMessages}" FontFamily="Courier New"/>
-                    </ScrollViewer>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
+                            <Button Content="Save" Margin="2" Padding="3,0" Style="{Binding SmallButtonStyle}" Command="{Binding SaveLogCommand}" />
+                            <Button Content="Clear" Margin="2" Padding="3,0"  Style="{Binding SmallButtonStyle}" Command="{Binding ClearLogCommand}"/>
+                        </StackPanel>
+                        <ScrollViewer x:Name="svLog" VerticalScrollBarVisibility="Auto" 
+                                          VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                            <TextBox x:Name="tbLog" IsEnabled="True" IsReadOnly="False" FontSize="12" MinWidth="350" 
+                                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch" AcceptsReturn="True"
+                                        TextWrapping="Wrap" HorizontalContentAlignment="Left" VerticalContentAlignment="Top"
+                                        Background="#FFEEEEF7" Text="{Binding Data.LogMessages}" FontFamily="Courier New"/>
+                        </ScrollViewer>
+                    </DockPanel>
                 </TabItem>
                 <TabItem x:Name="tbNotes" Header="Notes" FontSize="12">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">

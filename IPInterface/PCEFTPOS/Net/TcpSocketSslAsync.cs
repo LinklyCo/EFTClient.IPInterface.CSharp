@@ -69,7 +69,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         {
 #if (DEBUG)
             return true;
-#endif
+#else
             // Certificate chain is valid via a commercial 3rd party chain 
             if (sslPolicyErrors == SslPolicyErrors.None)
             {
@@ -136,6 +136,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
             LogRemoteCertificateFailure(certificate, chain, sslPolicyErrors);
             return false;
+#endif
         }
 
         /// <summary>
@@ -207,18 +208,18 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 else
                 {
                     var readTask = _clientStream.ReadAsync(buffer, 0, buffer.Length);
-                    var timeoutTask = Task.Delay(int.MaxValue, token); // Task.Delay handles CancellationToken correctly
-                    return await Task.Factory.ContinueWhenAny<int>(new Task[] { readTask, timeoutTask }, (completedTask) =>
+
+                    // FN-1558
+                    // Made a change here to prevent a memory leak
+                    // Instead of creating a new Task = Delay.Task(int.MaxValue, token) and adding this into
+                    // the task array passed into ContinueWithAny, we pass the token as a 3rd argument 
+                    // into ContineWhenAny and remove the Delay.Task
+                    // A memory leak was observed when the CancellationTokeSource was disposed of 
+                    // but the former Delay.Task was still running
+                    return await Task.Factory.ContinueWhenAny<int>(new Task[] { readTask }, (completedTask) =>
                     {
-                        if (completedTask == timeoutTask) //the timeout task was the first to complete
-                        {
-                            throw new TaskCanceledException();
-                        }
-                        else //the readTask completed
-                        {
-                            return readTask.Result;
-                        }
-                    });
+                        return readTask.Result;
+                    }, token);
                 }
             }
             catch

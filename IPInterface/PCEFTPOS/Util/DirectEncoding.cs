@@ -52,7 +52,24 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         public override int GetBytes(char[] chars, int charIndex, int charCount, byte[] bytes, int byteIndex)
         {
-            for (int i = charIndex, j = byteIndex; i < charCount; i++, j++)
+            if (chars == null || bytes == null)
+                throw new ArgumentNullException(chars == null ? nameof(chars) : nameof(bytes));
+
+            if (charIndex < 0 || charCount < 0)
+                throw new ArgumentOutOfRangeException(charIndex < 0 ? nameof(charIndex) : nameof(charCount));
+
+            if (chars.Length - charIndex < charCount)
+                throw new ArgumentOutOfRangeException(nameof(chars));
+
+            if (byteIndex < 0 || byteIndex > bytes.Length)
+                throw new ArgumentOutOfRangeException(nameof(byteIndex));
+            
+            int endIdx = charIndex + charCount;
+
+            if (byteIndex + charCount > bytes.Length)
+                throw new ArgumentException($"{nameof(bytes)} too small");
+
+            for (int i = charIndex, j = byteIndex; i < endIdx; i++, j++)
                 bytes[j] = (byte)chars[i];
             return charCount;
         }
@@ -71,7 +88,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         public override int GetBytes(string s, int charIndex, int charCount, byte[] bytes, int byteIndex)
         {
-            return GetBytes(s.ToCharArray(), charIndex, charCount, bytes, byteIndex);
+            return GetBytes(s?.ToCharArray(), charIndex, charCount, bytes, byteIndex);
         }
 
         public override int GetCharCount(byte[] bytes)

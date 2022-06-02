@@ -33,34 +33,90 @@ namespace PCEFTPOS.EFTClient.IPInterface
     /// <summary>Indicates the EFT terminal hardware type.</summary>
     public enum EFTTerminalType
     {
+        /// <summary>Unknown PIN pad terminal</summary>
+        Unknown,
         /// <summary>CBA Albert PIN pad terminal</summary>
         Albert,
-        /// <summary>Ingenico NPT 710 PIN pad terminal.</summary>
+        /// <summary>Ingenico NPT 710 PIN pad terminal</summary>
         IngenicoNPT710,
-        /// <summary>Ingenico NPT PX328 PIN pad terminal.</summary>
+        /// <summary>Ingenico NPT PX328 PIN pad terminal</summary>
         IngenicoPX328,
-        /// <summary>Ingenico NPT i5110 PIN pad terminal.</summary>
+        /// <summary>Ingenico NPT i5110 PIN pad terminal</summary>
         Ingenicoi5110,
-        /// <summary>Ingenico NPT i3070 PIN pad terminal.</summary>
+        /// <summary>Ingenico NPT i3070 PIN pad terminal</summary>
         Ingenicoi3070,
-        /// <summary>Ingenico Move5000 PIN pad terminal</summary>
+        /// <summary>Ingenico Move/5000 PIN pad terminal</summary>
         IngenicoMove5000,
         /// <summary>Ingenico IWL or ICT 250 PIN pad terminal</summary>
         IngenicoIxx250,
-        /// <summary>Sagem PIN pad terminal.</summary>
+        /// <summary>Sagem PIN pad terminal</summary>
         Sagem,
-        /// <summary>Verifone PIN pad terminal.</summary>
+        /// <summary>Verifone PIN pad terminal</summary>
         Verifone,
         /// <summary>Verifone Vx690 PIN pad terminal</summary>
         VerifoneVx690,
         /// <summary>Verifone Vx820 PIN pad terminal</summary>
         VerifoneVx820,
-        /// <summary>Keycorp PIN pad terminal.</summary>
+        /// <summary>Keycorp PIN pad terminal</summary>
         Keycorp,
         /// <summary>PCEFTPOS development Virtual Pinpad</summary>
         PCEFTPOSVirtualPinpad,
-        /// <summary>Unknown PIN pad terminal.</summary>
-        Unknown
+        /// <summary>Ingenico i5100 PIN pad terminal</summary>
+        Ingenicoi5100,
+        /// <summary>Ingenico Move/3500 PIN pad terminal</summary>
+        IngenicoMove3500,
+        /// <summary>Ingenico Move/2500 PIN pad terminal</summary>
+        IngenicoMove2500,
+        /// <summary>Ingenico Desk/5000 PIN pad terminal</summary>
+        IngenicoDesk5000,
+        /// <summary>Ingenico Desk/3000 PIN pad terminal</summary>
+        IngenicoDesk3000,
+        /// <summary>Ingenico Desk/1000 PIN pad terminal</summary>
+        IngenicoDesk1000,
+        /// <summary>Ingenico Lane/7000 PIN pad terminal</summary>
+        IngenicoLane7000,
+        /// <summary>Ingenico Lane/5000 PIN pad terminal</summary>
+        IngenicoLane5000,
+        /// <summary>Ingenico Lane/3000 PIN pad terminal</summary>
+        IngenicoLane3000,
+        /// <summary>Ingenico Axium D7 PIN pad terminal</summary>
+        IngenicoAxiumD7,
+        /// <summary>Ingenico APOS A8 PIN pad terminal</summary>
+        IngenicoA8,
+        /// <summary>Pax A30 PIN pad terminal</summary>
+        PaxA30,
+        /// <summary>Pax A77 PIN pad terminal</summary>
+        PaxA77,
+        /// <summary>Pax A920 PIN pad terminal</summary>
+        PaxA920,
+        /// <summary>Pax A920 Pro PIN pad terminal</summary>
+        PaxA920Pro,
+        /// <summary>Sunmi P2 LITE PIN pad terminal</summary>
+        SunmiP2Lite,
+        /// <summary>Sunmi P2 Pro PIN pad terminal</summary>
+        SunmiP2Pro,
+        /// <summary>Verifone P400 PIN pad terminal</summary>
+        VerifoneP400,
+        /// <summary>Verifone P200 PIN pad terminal</summary>
+        VerifoneP200,
+        /// <summary>Verifone P400C PIN pad terminal</summary>
+        VerifoneP400C,
+        /// <summary>Verifone P200C PIN pad terminal</summary>
+        VerifoneP200C,
+        /// <summary>Verifone Carbon 10 PIN pad terminal</summary>
+        VerifoneCarbon10,
+        /// <summary>Verifone Carbon 8 PIN pad terminal</summary>
+        VerifoneCarbon8,
+        /// <summary>Verifone Carbon 5 PIN pad terminal</summary>
+        VerifoneCarbon5,
+        /// <summary>Verifone M424 PIN pad terminal</summary>
+        VerifoneM424,
+        /// <summary>Verifone P630 PIN pad terminal</summary>
+        VerifoneP630,
+        /// <summary>Verifone T650P PIN pad terminal</summary>
+        VerifoneT650P,
+        /// <summary>Zeller NewPos 9920 PIN pad Terminal</summary>
+        ZellerNewPos9220,
     }
 
     /// <summary>PIN pad terminal supported options.</summary>

@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows;
+using System.Windows.Input;
 
 namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
 {
@@ -29,6 +30,8 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
                 vm.EndPoints.Add(new EndPointViewModel() { Name = "Cloud (sandbox)", Address = "pos.sandbox.cloud.pceftpos.com", Port = 443, Type = EndPointType.Cloud });
             }
 
+            vm.CurrentItem = vm.EndPoints[0];
+
             DataContext = vm;
             InitializeComponent();
         }
@@ -46,16 +49,29 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             txtName.Focus();
         }
 
-        private void BtnSave_Click(object sender, RoutedEventArgs e)
+        private void Save()
         {
             var svm = new EndPointEditorViewModel()
             {
-                CurrentItem = vm.CurrentItem,
                 EndPoints = new ObservableCollection<EndPointViewModel>(vm.EndPoints.Where(ep => !ep.AutoLoadedKey))
             };
-            
+
             var content = JsonConvert.SerializeObject(svm);
             File.WriteAllText(filename, content);
+        }
+        private void BtnApply_Click(object sender, RoutedEventArgs e)
+        {
+            Save();
+        }
+
+        private void BtnCancel_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        private void BtnOK_Click(object sender, RoutedEventArgs e)
+        {
+            Save();
             DialogResult = true;
             Close();
         }
@@ -68,27 +84,44 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
                 return;
             }
 
-            var eft = new EFTClientIPAsync();
+            BtnPairPinpad.IsEnabled = false;
+            Mouse.OverrideCursor = Cursors.AppStarting;
 
-            if (await eft.ConnectAsync(CI.Address, CI.Port, true, true))
+            try
             {
-                var r = await eft.WriteRequestAndWaitAsync<EFTCloudPairResponse>(new EFTCloudPairRequest() { ClientID = CI.ClientId, Password = CI.Password, PairingCode = CI.PairingCode }, new CancellationTokenSource(TimeSpan.FromSeconds(45)).Token);
+                var eft = new EFTClientIPAsync();
 
-                var description = "";
-                if (r.ResponseCode.Equals("CX", StringComparison.OrdinalIgnoreCase))
+                if (await eft.ConnectAsync(CI.Address, CI.Port, true, true))
                 {
-                    description = "\n\nEnter the correct pairing code from the terminal\nscreen and click 'Pair PINpad' again";
-                }
+                    var r = await eft.WriteRequestAndWaitAsync<EFTCloudPairResponse>(new EFTCloudPairRequest() { ClientID = CI.ClientId, Password = CI.Password, PairingCode = CI.PairingCode }, new CancellationTokenSource(TimeSpan.FromSeconds(45)).Token);
 
-                MessageBox.Show($"Success: {r.Success}\nResponse Code: {r.ResponseCode}\nResponse Text: {r.ResponseText}{description}", "PINpad Pairing Result", MessageBoxButton.OK, r.Success ? MessageBoxImage.Information : MessageBoxImage.Error);
+                    var description = "";
+                    if (r.ResponseCode.Equals("CX", StringComparison.OrdinalIgnoreCase))
+                    {
+                        description = "\n\nEnter the correct pairing code from the terminal\nscreen and click 'Pair PINpad' again";
+                    }
 
-                if (r.Success)
-                {
-                    CI.Token = r.Token;
+                    if (r.Success)
+                    {
+                        CI.Token = r.Token;
+                    }
+
+                    MessageBox.Show($"Success: {r.Success}\nResponse Code: {r.ResponseCode}\nResponse Text: {r.ResponseText}{description}", "PINpad Pairing Result", MessageBoxButton.OK, r.Success ? MessageBoxImage.Information : MessageBoxImage.Error);
                 }
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Exception: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            
+            Mouse.OverrideCursor = Cursors.Arrow;
+            BtnPairPinpad.IsEnabled = true;
+        }
 
-
+        private void BtnUnpair_Click(object sender, RoutedEventArgs e)
+        {
+            CI.Token = "";
+            CI.PairingCode = "";
         }
 
         private void BtnDelete_Click(object sender, RoutedEventArgs e)

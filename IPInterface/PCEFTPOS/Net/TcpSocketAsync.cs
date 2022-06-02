@@ -37,25 +37,25 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 else
                 {
                     var readTask = _client.GetStream().ReadAsync(buffer, 0, buffer.Length);
-                    var timeoutTask = Task.Delay(int.MaxValue, token); // Task.Delay handles CancellationToken correctly
-                    return await Task.Factory.ContinueWhenAny<int>(new Task[] { readTask, timeoutTask }, (completedTask) =>
-                    {
-                        if (completedTask == timeoutTask) //the timeout task was the first to complete
-                        {
-                            throw new TaskCanceledException();
-                        }
-                        else //the readTask completed/faulted/cancelled
-                        {
-                            if (!readTask.IsFaulted && !readTask.IsCanceled)
-                            {
-                                return readTask.Result;
-                            }
 
-                            // readTask is faulted or cancelled. Socket was probably closed whilst we were waiting on a response!
-                            Close();
-                            return 0;
+                    // FN-1558
+                    // Made a change here to prevent a memory leak
+                    // Instead of creating a new Task = Delay.Task(int.MaxValue, token) and adding this into
+                    // the task array passed into ContinueWithAny, we pass the token as a 3rd argument 
+                    // into ContineWhenAny and remove the Delay.Task
+                    // A memory leak was observed when the CancellationTokeSource was disposed of 
+                    // but the former Delay.Task was still running
+                    return await Task.Factory.ContinueWhenAny<int>(new Task[] { readTask }, (completedTask) =>
+                    {
+                        if (!readTask.IsFaulted && !readTask.IsCanceled)
+                        {
+                            return readTask.Result;
                         }
-                    });
+
+                        // readTask is faulted or cancelled. Socket was probably closed whilst we were waiting on a response!
+                        Close();
+                        return 0;
+                    }, token);
                 }
             }
             catch
