@@ -230,6 +230,17 @@ class EFTClientIPDemoAsync
 ### 1.6.2.0 (15/12/2021)
 * Fixed CancellationTokenSource memory leak
 
+### 1.5.0.0 (2020-01-28)
+* Added Demo POS for product level blocking transactions
+* TEST & Async POS updated to support new cloud pairing process
+
+### 1.4.5.0 (2018-12-14)
+* Added in Void transaction type...
+* Added in a check on msg length for parsing Duplicate Receipt responses so it can handle TPP duplicate responses
+* Fixed 'Display Swipe Card' slave command
+* Added in support for Input On POS display requests
+* Added in MerchantNumber field for GetLastReceipt
+
 ### 1.4.4.0 (27/09/2019)
 * Added new IPnterface calls for CloudPairing Request/Response and CloudTokenLogon Request/Response
 * Updated TestPOS to support new Cloud pairing and cloud token request/response
