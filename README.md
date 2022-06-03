@@ -205,8 +205,6 @@ class EFTClientIPDemoAsync
 
 ### 1.6.7 (2022-04-22)
 * Consolidating IPInterface version numbers
-
-### 1.6.6 (2022-03-29)
 * 'StringExtension.StrLen' function now returns correct values when startIndex argument has a non-zero value
 * 'IntegerExtension.PadLeft' no longer throws an exception if called on a negative
 * 'DecimalExtension.PadLeft' no longer throws an exception if called on a negative
@@ -217,17 +215,9 @@ class EFTClientIPDemoAsync
 * Removed (many of but not all) of the "magic strings" used by DefaultMessageParser when generating EFTRequests
 * Updated property names on ControlPanelRequest and EFTControlPanelRequest to be in line with spec and other EFTRequests. Old property names have been marked obsolete, but are still supported.
 * EFTClientIPAsync now correctly disposes it's wrapped ITCPSocketAsync when it replaces it with a new connection and when it itself is disposed
-
-### 1.6.5 (2022-03-15)
 * Aligning `EFTTerminalType` enum list with spec
-
-### 1.6.4.0 (2022-02-24)
-* Fixing Null reference exception when receiving data using EFTClientIP and no subscribed DialogUIHandler
-
-### 1.6.3.0 (16/12/2021)
+* Fixing Null reference exception when receiving data using EFTClientIP and no subscribed DialogUIHandler)
 * Adding StanVb field to resolve ambiguity in VB.Net due to case-insensitivity
-
-### 1.6.2.0 (15/12/2021)
 * Fixed CancellationTokenSource memory leak
 
 ### 1.5.0.0 (2020-01-28)
