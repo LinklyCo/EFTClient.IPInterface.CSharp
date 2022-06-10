@@ -148,20 +148,20 @@ namespace PCEFTPOS.EFTClient.IPInterface
     /// <summary>Supported EFTPOS account types.</summary>
     public enum AccountType
     {
-        [Description("Default (' ')")]
         /// <summary>The default account type for a card.</summary>
+        [Description("Default (' ')")]
         Default = ' ',
 
-        [Description("Savings ('3')")]
         /// <summary>The savings account type.</summary>
+        [Description("Savings ('3')")]
         Savings = '3',
 
-        [Description("Cheque ('1')")]
         /// <summary>The cheque account type.</summary>
+        [Description("Cheque ('1')")]
         Cheque = '1',
 
-        [Description("Credit ('2')")]
         /// <summary>The credit account type.</summary>
+        [Description("Credit ('2')")]
         Credit = '2'
     }
 

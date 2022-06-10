@@ -3,16 +3,16 @@ namespace PCEFTPOS.EFTClient.IPInterface
     /// <summary>The style of PC-EFTPOS dialog.</summary>
 	public enum DialogType
     {
-        [Description("Standard ('0')")]
         /// <summary>The standard PC-EFTPOS dialog.</summary>
+        [Description("Standard ('0')")]
 		Standard = '0',
 
-        [Description("Touch Screen ('1')")]
         /// <summary>The PC-EFTPOS dialog for touch screens. Has larger buttons.</summary>
+        [Description("Touch Screen ('1')")]
 		TouchScreen = '1',
 
-        [Description("Hidden ('2')")]
         /// <summary>Do not show the PC-EFTPOS dialogs.</summary>
+        [Description("Hidden ('2')")]
 		Hidden = '2'
     }
 

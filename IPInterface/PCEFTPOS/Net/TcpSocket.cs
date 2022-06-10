@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -385,15 +385,22 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <exclude/>
         public SslStream Authenticate(Stream stream)
         {
-            SslStream sslStream = new SslStream(stream, false, ValidateServerCertificate);
+            var validator = new SslValidator(LogCertError);
+            SslStream sslStream = new SslStream(stream, false, validator.RemoteCertificateValidationCallback);
             sslStream.AuthenticateAsClient(HostName);
             return sslStream;
         }
 
-        /// <exclude/>
-        public static bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        private void LogCertError(LogLevel level, Action<TraceRecord> traceAction)
         {
-            return true;
+            if (LogLevel.Error >= level)
+            {
+                return;
+            }
+
+            var tr = new TraceRecord() { Level = level };
+            traceAction(tr);
+            FireOnErrorEvent(TcpSocketExceptionType.ConnectException, tr.Message);
         }
 
         void FireOnTerminatedEvent(string message)

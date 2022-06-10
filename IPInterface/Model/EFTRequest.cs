@@ -8,24 +8,24 @@ namespace PCEFTPOS.EFTClient.IPInterface
     /// </summary>
     public enum ReceiptPrintModeType
     {
-        [Description("POS ('0')")]
         /// <summary> Receipts will be passed back to the POS in the PrintReceipt event </summary>
+        [Description("POS ('0')")]
         POSPrinter = '0',
 
-        [Description("EFT-Client ('1')")]
         /// <summary> The EFT-Client will attempt to print using the printer configured in the EFT-Client (Windows only) </summary>
+        [Description("EFT-Client ('1')")]
         EFTClientPrinter = '1',
 
-        [Description("PINpad ('9')")]
         /// <summary> Receipts will be printed using the pinpad printer </summary>
+        [Description("PINpad ('9')")]
         PinpadPrinter = '9',
 
-        [Description("POS - Merchant on PINpad ('7')")]
         /// <summary> Merchant receipts print on internal printer, all other print on POS </summary>
+        [Description("POS - Merchant on PINpad ('7')")]
         MerchantInternalPOSPrinter = '7',
 
-        [Description("EFT-Client - Merchant on PINpad ('8')")]
         /// <summary> Merchant receipts print on internal printer, all other print using the printer configured in the EFT-Client (Windows only) </summary>
+        [Description("EFT-Client - Merchant on PINpad ('8')")]
         MerchantInternalEFTClientPrinter = '8'
     }
 

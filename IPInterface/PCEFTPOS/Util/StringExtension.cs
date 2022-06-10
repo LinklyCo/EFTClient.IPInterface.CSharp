@@ -58,14 +58,14 @@
         /// <summary>
         /// Returns the length of the string until a null terminator or end of string (whichever comes first)
         /// </summary>
-        /// <param name="s">String to get length of</param>
+        /// <param name="v">String to get length of</param>
         /// <returns></returns>
         public static int StrLen(this string v) => StrLen(v, 0);
 
         /// <summary>
         /// Returns the length of the string until a null terminator or end of string (whichever comes first)
         /// </summary>
-        /// <param name="s">String to get length of</param>
+        /// <param name="v">String to get length of</param>
         /// <param name="startIndex">Offset into the string to start counting from</param>
         /// <returns></returns>
         public static int StrLen(this string v, int startIndex)

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Authentication;
 using System.Text;
@@ -48,18 +46,6 @@ namespace PCEFTPOS.EFTClient.IPInterface
             {
                 // Check if there are any custom root certificates to load
                 var tcp = new TcpSocketSslAsync();
-                try
-                {
-                    var extns = new string[] { ".der", ".pem" };
-                    var certs = from f in Directory.EnumerateFiles(Directory.GetCurrentDirectory())
-                        where extns.Contains((new FileInfo(f)).Extension)
-                        select f;
-                    tcp.CustomeRootCerts = certs?.ToList();
-                }
-                catch (Exception ex)
-                {
-                    Log(LogLevel.Error, tr => tr.Set($"Failed to get certs: {ex.Message}"));
-                }
 
                 clientStream = tcp;
             }

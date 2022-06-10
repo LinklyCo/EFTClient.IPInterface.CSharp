@@ -5,31 +5,31 @@ namespace PCEFTPOS.EFTClient.IPInterface
     /// <summary>Indicates the type of logon to perform.</summary>
     public enum QueryCardType
     {
-        [Description("Read Card ('0')")]
         /// <summary>Read card only</summary>
+        [Description("Read Card ('0')")]
         ReadCard = '0',
 
-        [Description("Read Card and Select Account ('1')")]
         /// <summary>Read card + select account</summary>
+        [Description("Read Card and Select Account ('1')")]
         ReadCardAndSelectAccount = '1',
 
-        [Description("Select Account ('5')")]
         /// <summary>Select account only</summary>
+        [Description("Select Account ('5')")]
         SelectAccount = '5',
 
-        [Description("Pre-Swipe Start ('7')")]
         /// <summary>Pre-swipe</summary>
         /// <remarks>Do not use</remarks>
+        [Description("Pre-Swipe Start ('7')")]
         PreSwipeStart = '7',
 
-        [Description("Pre-Swipe Loyalty ('8')")]
         /// <summary>Pre-swipe special</summary>
         /// <remarks>Do not use</remarks>
+        [Description("Pre-Swipe Loyalty ('8')")]
         PreSwipeLoyalty = '8',
 
-        [Description("Pre-Swipe Deposit ('9')")]
         /// <summary>Pre-swipe special 2</summary>
         /// <remarks>Do not use</remarks>
+        [Description("Pre-Swipe Deposit ('9')")]
         PreSwipeDeposit = '9'
     }
 

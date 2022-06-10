@@ -120,7 +120,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemo
         void _eft_OnDisplay(object sender, EFTEventArgs<EFTDisplayResponse> e)
         {
             var r = e.Response;
-            ShowDialog((r.DisplayText.Length >= 0) ? r.DisplayText[0] : "", (r.DisplayText.Length >= 1) ? r.DisplayText[1] : "", r.OKKeyFlag, r.CancelKeyFlag, r.AcceptYesKeyFlag, r.DeclineNoKeyFlag, r.AuthoriseKeyFlag);
+            ShowDialog((r.DisplayText.Length > 0) ? r.DisplayText[0] : "", (r.DisplayText.Length > 1) ? r.DisplayText[1] : "", r.OKKeyFlag, r.CancelKeyFlag, r.AcceptYesKeyFlag, r.DeclineNoKeyFlag, r.AuthoriseKeyFlag);
         }
 
         void _eft_OnTerminated(object sender, SocketEventArgs e)
@@ -314,10 +314,5 @@ namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemo
         }
 
         #endregion
-
-        private void BtnEFTAuth_Click_1(object sender, RoutedEventArgs e)
-        {
-
-        }
     }
 }

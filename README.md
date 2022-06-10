@@ -203,8 +203,12 @@ class EFTClientIPDemoAsync
 
 ## Release notes
 
-### 1.6.7 (2022-04-22)
+### 1.6.8 (2022-06-07)
 * Consolidating IPInterface version numbers
+* Added SSL Certificate checking for non-async EFT-Client Interface
+* Fixing syntax for some XML comments
+* Fixing minor logic inconsistancies in demo apps
+* Making Slave command variables consistent in style
 * 'StringExtension.StrLen' function now returns correct values when startIndex argument has a non-zero value
 * 'IntegerExtension.PadLeft' no longer throws an exception if called on a negative
 * 'DecimalExtension.PadLeft' no longer throws an exception if called on a negative

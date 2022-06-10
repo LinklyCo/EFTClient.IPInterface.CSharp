@@ -5,40 +5,40 @@ namespace PCEFTPOS.EFTClient.IPInterface
     /// <summary>Indicates the type of logon to perform.</summary>
     public enum LogonType
     {
-        [Description("Standard (' ')")]
         /// <summary>Standard EFT logon to the bank.</summary>
+        [Description("Standard (' ')")]
         Standard = ' ',
 
-        [Description("RSA ('4')")]
         /// <summary>Standard EFT logon to the bank.</summary>
         /// <remarks>Not supported by all PIN pads.</remarks>
+        [Description("RSA ('4')")]
         RSA = '4',
 
-        [Description("TMS Full ('5')")]
         /// <summary>Standard EFT logon to the bank.</summary>
         /// <remarks>Not supported by all PIN pads.</remarks>
+        [Description("TMS Full ('5')")]
         TMSFull = '5',
 
-        [Description("TMS Params ('6')")]
         /// <summary>Standard EFT logon to the bank.</summary>
         /// <remarks>Not supported by all PIN pads.</remarks>
+        [Description("TMS Params ('6')")]
         TMSParams = '6',
 
-        [Description("TMS Software ('7')")]
         /// <summary>Standard EFT logon to the bank.</summary>
         /// <remarks>Not supported by all PIN pads.</remarks>
+        [Description("TMS Software ('7')")]
         TMSSoftware = '7',
 
-        [Description("Logoff ('8')")]
         /// <exclude/>
+        [Description("Logoff ('8')")]
         Logoff = '8',
 
-        [Description("Diagnostics ('1')")]
         /// <summary>Enables diagnostics.</summary>
+        [Description("Diagnostics ('1')")]
         Diagnostics = '1',
 
-        [Description("Account Verify ('A')")]
         /// <summary>Verify card and request token</summary>
+        [Description("Account Verify ('A')")]
         AccountVerify = 'A'
     }
 

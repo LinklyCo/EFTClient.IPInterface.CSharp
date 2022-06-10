@@ -1,5 +1,9 @@
 # Release Notes
 
+## v1.11.2 07/06/2022 Robert Whitlock
+- [STRY0192268] Build with IPInterface v1.6.8
+- [STRY0192268] Making Slave command variables consistent in style
+
 ## v1.11.1 22/04/2022 Robert Whitlock
 - [STRY0182716] Built with IPInterface v1.6.7
 

@@ -3,49 +3,49 @@ namespace PCEFTPOS.EFTClient.IPInterface
     /// <summary>EFTPOS settlement types.</summary>
 	public enum SettlementType
     {
-        [Description("Settlement ('S')")]
         /// <summary>Perform a settlement on the terminal.</summary>
-		/// <remarks>Can only be performed once per day.</remarks>
-		Settlement = 'S',
+        /// <remarks>Can only be performed once per day.</remarks>
+        [Description("Settlement ('S')")]
+        Settlement = 'S',
 
-        [Description("Pre-settlement ('P')")]
         /// <summary>Perform a pre-settlement on the terminal.</summary>
-		/// <remarks>Not supported by all PIN pads.</remarks>
-		PreSettlement = 'P',
+        /// <remarks>Not supported by all PIN pads.</remarks>
+        [Description("Pre-settlement ('P')")]
+        PreSettlement = 'P',
 
-        [Description("Last Settlement ('L')")]
         /// <summary>Perform a last settlement on the terminal.</summary>
-		/// <remarks>Not supported by all PIN pads.</remarks>
-		LastSettlement = 'L',
+        /// <remarks>Not supported by all PIN pads.</remarks>
+        [Description("Last Settlement ('L')")]
+        LastSettlement = 'L',
 
-        [Description("Summary Totals ('U')")]
         /// <summary>Perform a summary totals on the terminal.</summary>
-		/// <remarks>Not supported by all PIN pads.</remarks>
-		SummaryTotals = 'U',
+        /// <remarks>Not supported by all PIN pads.</remarks>
+        [Description("Summary Totals ('U')")]
+        SummaryTotals = 'U',
 
-        [Description("Sub Shift Totals ('H')")]
         /// <summary>Perform a shift/sub totals on the terminal.</summary>
-		/// <remarks>Not supported by all PIN pads.</remarks>
-		SubShiftTotals = 'H',
+        /// <remarks>Not supported by all PIN pads.</remarks>
+        [Description("Sub Shift Totals ('H')")]
+        SubShiftTotals = 'H',
 
-        [Description("Detailed Transaction Listing ('I')")]
         /// <summary>Peform a transaction listing on the terminal.</summary>
-		/// <remarks>Not supported by all PIN pads.</remarks>
-		DetailedTransactionListing = 'I',
+        /// <remarks>Not supported by all PIN pads.</remarks>
+        [Description("Detailed Transaction Listing ('I')")]
+        DetailedTransactionListing = 'I',
 
-        [Description("Start Cash ('M')")]
         /// <summary>Start cash</summary>
         /// <remarks>Not supported by all PIN pads.</remarks>
+        [Description("Start Cash ('M')")]
         StartCash = 'M',
 
-        [Description("Store and Forward Totals ('F')")]
         /// <summary>SAF report</summary>
         /// <remarks>Not supported by all PIN pads.</remarks>
+        [Description("Store and Forward Totals ('F')")]
         StoreAndForwardTotals = 'F',
 
-        [Description("Daily Cash Statement ('D')")]
         /// <summary>Daily cash</summary>
         /// <remarks>StGeorge agency only.</remarks>
+        [Description("Daily Cash Statement ('D')")]
         DailyCashStatement = 'D'
     }
 

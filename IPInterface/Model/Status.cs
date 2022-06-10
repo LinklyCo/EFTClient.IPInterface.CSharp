@@ -5,28 +5,28 @@ namespace PCEFTPOS.EFTClient.IPInterface
     /// <summary>Indicates the requested status type.</summary>
     public enum StatusType
     {
-        [Description("Standard ('0')")]
         /// <summary>Request the EFT status from the PIN pad.</summary>
+        [Description("Standard ('0')")]
         Standard = '0',
 
-        [Description("Terminal App Info ('1')")]
         /// <summary>Not supported by all PIN pads.</summary>
+        [Description("Terminal App Info ('1')")]
         TerminalAppInfo = '1',
 
-        [Description("App CPAT ('2')")]
         /// <summary>Not supported by all PIN pads.</summary>
+        [Description("App CPAT ('2')")]
         AppCPAT = '2',
 
-        [Description("App CPAT ('3')")]
         /// <summary>Not supported by all PIN pads.</summary>
+        [Description("App CPAT ('3')")]
         AppNameTable = '3',
 
-        [Description("Undefined ('4')")]
         /// <summary>Undefined</summary>
+        [Description("Undefined ('4')")]
         Undefined = '4',
 
-        [Description("PreSwipe ('5')")]
         /// <summary>Not supported by all PIN pads.</summary>
+        [Description("PreSwipe ('5')")]
         PreSwipe = '5'
     }
 

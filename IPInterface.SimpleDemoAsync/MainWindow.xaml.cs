@@ -83,10 +83,10 @@ namespace PCEFTPOS.EFTClient.IPInterface.SimpleDemoAsync
             }
             // Try to connect if we have an address. Either navigate to the main 
             // page (if we are connected) or the settings page (if we aren't)
-           else if (_settings?.EFTClientAddress.Length > 0 && connected)
-           {
+            else if (_settings?.EFTClientAddress.Length > 0)
+            {
                 connected = await ConnectAsync();
-           }
+            }
 
             if (connected)
             {

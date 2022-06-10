@@ -3,26 +3,27 @@
     /// <summary>PC-EFTPOS key types.</summary>
     public enum EFTPOSKey
     {
-
-        [Description("OK/Cancel ('0')")]
         /// <summary>The OK/CANCEL key.</summary>
+        [Description("OK/Cancel ('0')")]
         OkCancel = '0',
 
-        [Description("Yes/Accept ('1')")]
         /// <summary>The YES/ACCEPT key.</summary>
+        [Description("Yes/Accept ('1')")]
         YesAccept = '1',
 
-        [Description("No/Decline ('2')")]
         /// <summary>The NO/DECLINE key.</summary>
+        [Description("No/Decline ('2')")]
         NoDecline = '2',
 
-        [Description("Authorise ('3')")]
         /// <summary>The AUTH key.</summary>
+        [Description("Authorise ('3')")]
         Authorise = '3',
 
+        /// <summary>Used by Woolworths to indicate Data came from a barcode.</summary>
         [Filter("Woolworths"), Description("Barcode ('B')")]
         Barcode = 'B',
 
+        /// <summary>Used by Woolworths to indicate Data came from keyed entry.</summary>
         [Filter("Woolworths"), Description("Keyed ('K')")]
         Keyed = 'K'
     }

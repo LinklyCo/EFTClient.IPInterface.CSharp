@@ -5,24 +5,24 @@ namespace PCEFTPOS.EFTClient.IPInterface
     /// <summary>Indicates which tabs of the PC-EFTPOS Client control panel to display.</summary>
 	public enum ControlPanelType
     {
-        [Description("Full ('0')")]
         /// <summary>Show the control panel with all tabs available.</summary>
+        [Description("Full ('0')")]
         Full = '0',
 
-        [Description("Settlement Page ('1')")]
         /// <summary>Show the control panel with only the settlement tab available.</summary>
+        [Description("Settlement Page ('1')")]
         Settlement = '1',
 
-        [Description("Journal Page ('2')")]
         /// <summary>Show the control panel with only the journal viewer tab available.</summary>
+        [Description("Journal Page ('2')")]
         JournalViewer = '2',
 
-        [Description("PINpad Setup Page ('3')")]
         /// <summary>Show the control panel with only the PIN pad setup tab available.</summary>
+        [Description("PINpad Setup Page ('3')")]
         PINPadSetup = '3',
 
-        [Description("Status Page ('4')")]
         /// <summary>Show the control panel with only the status tab available.</summary>
+        [Description("Status Page ('4')")]
         Status = '4'
     }
 

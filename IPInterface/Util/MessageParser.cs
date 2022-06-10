@@ -658,8 +658,8 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 r.HardwareSerial = TryParse<string>(msg, 16, ref index);
                 r.RetailerName = TryParse<string>(msg, 40, ref index);
                 r.OptionsFlags = ParseStatusOptionFlags(msg.Substring(index, 32).ToCharArray()); index += 32;
-                r.SAFCreditLimit = TryParse<int>(msg, 9, ref index) / 100;
-                r.SAFDebitLimit = TryParse<int>(msg, 9, ref index) / 100;
+                r.SAFCreditLimit = TryParse<decimal>(msg, 9, ref index) / 100;
+                r.SAFDebitLimit = TryParse<decimal>(msg, 9, ref index) / 100;
                 r.MaxSAF = TryParse<int>(msg, 3, ref index);
                 r.KeyHandlingScheme = ParseKeyHandlingType(msg[index++]);
                 r.CashoutLimit = TryParse<decimal>(msg, 9, ref index) / 100;
@@ -879,10 +879,12 @@ namespace PCEFTPOS.EFTClient.IPInterface
             char subcode = TryParse<char>(msg, 1, ref index);
             if (subcode == 'P')
             {
-                var resp = new EFTCloudPairResponse();
-                resp.Success = TryParse<bool>(msg, 1, ref index);
-                resp.ResponseCode = TryParse<string>(msg, 2, ref index);
-                resp.ResponseText = TryParse<string>(msg, 20, ref index);
+                var resp = new EFTCloudPairResponse
+                {
+                    Success = TryParse<bool>(msg, 1, ref index),
+                    ResponseCode = TryParse<string>(msg, 2, ref index),
+                    ResponseText = TryParse<string>(msg, 20, ref index)
+                };
 
                 // v1 cloud would return 6 byte "redirect port" followed by 3 byte "redirect address length"
                 // v2 cloud 2 removed these. temp fix here is to support both
@@ -904,18 +906,20 @@ namespace PCEFTPOS.EFTClient.IPInterface
             }
             else if (subcode == 'T')
             {
-                var tokenresp = new EFTCloudTokenLogonResponse();
-                tokenresp.Success = TryParse<bool>(msg, 1, ref index);
-                tokenresp.ResponseCode = TryParse<string>(msg, 2, ref index);
-                tokenresp.ResponseText = TryParse<string>(msg, 20, ref index);
-                return tokenresp;
+                return new EFTCloudTokenLogonResponse
+                {
+                    Success = TryParse<bool>(msg, 1, ref index),
+                    ResponseCode = TryParse<string>(msg, 2, ref index),
+                    ResponseText = TryParse<string>(msg, 20, ref index)
+                };
             }
 
-            var r = new EFTCloudLogonResponse();
-            r.Success = TryParse<bool>(msg, 1, ref index);
-            r.ResponseCode = TryParse<string>(msg, 2, ref index);
-            r.ResponseText = TryParse<string>(msg, 20, ref index);
-            return r;
+            return new EFTCloudLogonResponse
+            {
+                Success = TryParse<bool>(msg, 1, ref index),
+                ResponseCode = TryParse<string>(msg, 2, ref index),
+                ResponseText = TryParse<string>(msg, 20, ref index)
+            };
         }
 
         EFTResponse ParseBasketDataResponse(string msg)
