@@ -10,7 +10,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
     /// </summary>
     public partial class PadEditor : Window
     {
-        public PadViewModel ViewModel = null;
+        public PadViewModel ViewModel { get; set; } = null;
 
         public PadEditor(string filename, string title = "PAD Tag", bool dataButtonVisible = true)
         {
@@ -25,14 +25,14 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             txtMName.Focus();
         }
 
-        private void btnDone_Click(object sender, RoutedEventArgs e)
+        private void BtnDone_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.Save();
             DialogResult = true;
             Close();
         }
 
-        private void lstPadContent_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void LstPadContent_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             try
             {
@@ -66,7 +66,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
         }
 
-        private void lstPadEditor_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void LstPadEditor_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             try
             {
@@ -93,12 +93,12 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
         }
 
-        private void btnBack_Click(object sender, RoutedEventArgs e)
+        private void BtnBack_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.EditMode = false;
         }
 
-        private void btnAdd_Click(object sender, RoutedEventArgs e)
+        private void BtnAdd_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -124,7 +124,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
         }
 
-        private void btnMAdd_Click(object sender, RoutedEventArgs e)
+        private void BtnMAdd_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -149,7 +149,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
         }
 
-        private void btnMUpdate_Click(object sender, RoutedEventArgs e)
+        private void BtnMUpdate_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -162,7 +162,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
         }
 
-        private void btnUpdate_Click(object sender, RoutedEventArgs e)
+        private void BtnUpdate_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -175,7 +175,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
         }
 
-        private void btnSave_Click(object sender, RoutedEventArgs e)
+        private void BtnSave_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -223,9 +223,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
         }
 
-        private void btnMUp_Click(object sender, RoutedEventArgs e)   => ReorderItem(false);
+        private void BtnMUp_Click(object sender, RoutedEventArgs e)   => ReorderItem(false);
 
-        private void btnMDown_Click(object sender, RoutedEventArgs e) => ReorderItem(true);
+        private void BtnMDown_Click(object sender, RoutedEventArgs e) => ReorderItem(true);
     }
 
 }

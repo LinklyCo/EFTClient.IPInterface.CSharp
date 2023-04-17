@@ -194,42 +194,14 @@ namespace PCEFTPOS.EFTClient.IPInterface
     /// <summary>A PC-EFTPOS terminal settlement response object.</summary>
     public class EFTSettlementResponse : EFTResponse
     {
-        //List<SettlementCardTotals> settleCardData;
-        //SettlementTotals totalsData;
-
         /// <summary>Constructs a default terminal settlement response object.</summary>
         public EFTSettlementResponse() : base(typeof(EFTSettlementRequest))
         {
-            //settleCardData = new List<SettlementCardTotals>();
-            //totalsData = new SettlementTotals();
         }
 
         /// <summary>Two digit merchant code</summary>
         /// <value>Type: <see cref="string"/><para>The default is "00"</para></value>
         public string Merchant { get; set; } = "00";
-
-        ///// <summary>Number of cards present in the settlement totals.</summary>
-        ///// <value>Type: <see cref="System.Int32" /></value>
-        //public int SettlementCardCount
-        //{
-        //    get { return settleCardData.Count; }
-        //}
-
-        ///// <summary>List of SettlementCardTotals objects.</summary>
-        ///// <value>Type: <see cref="SettlementCardTotals">SettlementCardTotals list</see></value>
-        //public List<SettlementCardTotals> SettlementCardData
-        //{
-        //    get { return settleCardData; }
-        //    set { settleCardData = value; }
-        //}
-
-        ///// <summary>Settlement totals.</summary>
-        ///// <value>Type: <see cref="SettlementTotals" /></value>
-        //public SettlementTotals TotalsData
-        //{
-        //    get { return totalsData; }
-        //    set { totalsData = value; }
-        //}
 
         /// <summary>Settlement data</summary>
         public string SettlementData { get; set; } = "";

@@ -175,51 +175,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         #region Transaction
 
-        readonly string[] previousValues = new string[4];
-        bool _isOneButton = false;
-        public bool IsOneButton
-        {
-            get => _isOneButton;
-            set
-            {
-                if (value)
-                {
-                    previousValues[0] = IsETS ? "1" : "0";
-                    previousValues[1] = TerminalString.ToString();
-                    previousValues[2] = MerchantNumber;
-                    previousValues[3] = TransactionTypes[TxnTypeIdx];
-
-                    IsETS = value;
-                    TerminalString = TerminalList.FirstOrDefault(t => t.Contains(TerminalApplication.ETS.ToString()));
-                    MerchantNumber = ONEBUTTON;
-                    TxnTypeIdx = 0;
-                }
-                else
-                {
-                    IsETS = previousValues[0] == "1";
-                    TerminalString = previousValues[1];
-                    MerchantNumber = previousValues[2];
-                    TxnTypeIdx = 3;
-                }
-
-                _isOneButton = value;
-                NotifyPropertyChanged(nameof(IsOneButton));
-            }
-        }
-
-        bool _isETS = false;
         public bool IsETS
         {
-            get => _isETS;
-            set
-            {
-                _isETS = value;
-                var prev = _terminalString[1];
-                TerminalString = _isETS ? prev : TerminalApplication.EFTPOS.ToString();
-                NotifyPropertyChanged(nameof(IsETS));
-                NotifyPropertyChanged(nameof(TransactionTypes));
-                TxnTypeIdx = value ? 3 : 1;
-            }
+            get => TerminalString.Contains(TerminalApplication.ETS.ToString());
         }
 
         public bool IsPrintTimeOut { get; set; } = false;
@@ -272,7 +230,16 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 _terminalString[1] = _terminalString[0];
                 _terminalString[0] = value;
 
+                NotifyPropertyChanged(nameof(IsETS));
+                NotifyPropertyChanged(nameof(TransactionTypes));
+
+                if (IsETS)
+                    TxnTypeIdx = 0; // Redemption (P)
+                else
+                    TxnTypeIdx = 1; // purchase cash (P)
+
                 Application = GetEnumValue(value, TerminalApplication.EFTPOS);
+
                 NotifyPropertyChanged(nameof(TerminalString));
             }
         }
@@ -360,7 +327,16 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             }
         }
 
-        public EFTTransactionRequest TransactionRequest { get; set; } = new EFTTransactionRequest();
+        private EFTTransactionRequest _txnRequest = new EFTTransactionRequest();
+        public EFTTransactionRequest TransactionRequest
+        {
+            get => _txnRequest;
+            set
+            {
+                _txnRequest = value;
+                NotifyPropertyChanged(nameof(TransactionRequest));
+            }
+        }
 
         public ObservableCollection<string> TransactionList { get => _transactionTypes; }
         string _selectedApplication = string.Empty;
@@ -398,6 +374,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
               new Mnd("89", "ZipMoney"),
               new Mnd("90", "TruRating"),
               new Mnd("90", "Reserved"),
+              new Mnd("98", "Oracle"),
               new Mnd("99", "App Hub")
             };
 
@@ -510,11 +487,13 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             {
                 _merchantNumber = value;
                 TransactionRequest.Merchant = value;
+                NotifyPropertyChanged(nameof(TransactionRequest));
                 NotifyPropertyChanged(nameof(MerchantNumber));
             }
         }
 
         int _txnTypeIdx = -1;
+
         public int TxnTypeIdx
         {
             get => _txnTypeIdx;
@@ -536,6 +515,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
                 _txnTypeIdx = value;
                 NotifyPropertyChanged(nameof(TxnTypeIdx));
+                NotifyPropertyChanged(nameof(TransactionRequest));
             }
         }
 
@@ -552,6 +532,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 if (Enum.TryParse(item, out TransactionType txnType))
                 {
                     TransactionRequest.OriginalTxnType = txnType;
+                    NotifyPropertyChanged(nameof(TransactionRequest));
                 }
             }
         }
@@ -691,8 +672,8 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         #region SendKey
         public EFTPOSKey SelectedPosKey { get; set; } = EFTPOSKey.OkCancel;
-        private ObservableCollection<EFTPOSKey> _posKeyList = GetFilteredEnumList<EFTPOSKey>();
-        private ObservableCollection<EFTPOSKey> _posKeyListWow = GetFilteredEnumList<EFTPOSKey>("Woolworths", false);
+        private readonly ObservableCollection<EFTPOSKey> _posKeyList = GetFilteredEnumList<EFTPOSKey>();
+        private readonly ObservableCollection<EFTPOSKey> _posKeyListWow = GetFilteredEnumList<EFTPOSKey>("Woolworths", false);
         public ObservableCollection<EFTPOSKey> PosKeyList => Settings.IsWoolworthsPOS ? _posKeyListWow : _posKeyList;
 
         public string PosData { get; set; } = string.Empty;
@@ -762,6 +743,22 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             }
         }
 
+        private string _eftLog = string.Empty;
+        public string EftLog
+        {
+            get
+            {
+                return _eftLog;
+            }
+            set
+            {
+                _eftLog = value;
+                NotifyPropertyChanged(nameof(EftLog));
+            }
+        }
+
+        public bool EftLogEnabled { get; set; } = false;
+
         private bool isSettingsShown = true;
         public bool IsSettingsShown
         {
@@ -812,16 +809,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         protected void NotifyPropertyChanged(string info)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(info));
-        }
-
-        private ObservableCollection<string> GetEnum<T>() where T : struct, IConvertible
-        {
-            if (!typeof(T).IsEnum)
-            {
-                throw new ArgumentException("T must be an enumerated type");
-            }
-
-            return new ObservableCollection<string>(Enum.GetNames(typeof(T)));
         }
 
         private static string GetEnumName(FieldInfo x, bool includeValue = false)
@@ -994,6 +981,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         #region Receipts
         private string _receiptInfo = string.Empty;
+
         public string Receipt
         {
             get

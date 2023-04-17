@@ -7,9 +7,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using IPInterface.TestPOS.Utils;
 
 namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 {
@@ -21,9 +23,13 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         const string SLAVE_CMD_FILENAME = "slave.json";
         const string SETTINGS_FILENAME = "settings.json";
         const string ENDPOINTS_FILENAME = "endpoints.json";
+        private const int EFT_LOG_DISABLED = -1;
         readonly EftWrapper eftw = null;
         ProxyDialog proxy = new ProxyDialog();
-        private MainWindow _parent;
+        private readonly MainWindow _parent;
+        private Timer _eftLogTimer;
+        private string _eftLogPath;
+        private int _eftLogOffset = EFT_LOG_DISABLED;
 
         public event LogEvent OnLog;
 
@@ -65,6 +71,58 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             Data.OnDisplayChanged += Data_OnDisplayChanged;
 
             proxyVM.OnSendKey += ProxyVM_OnSendKey;
+
+            var fileSpec = EFTRegistry.GetSubkeyStringValue("EVL", "FILESPEC", "EFTPOS.LOG");
+            var split = fileSpec.SplitLast(new[] { '\\' }, StringSplitOptions.RemoveEmptyEntries);
+            string fileName, fileDir = null;
+            switch (split.Length)
+            {
+                case 2:  fileName = split[1];     fileDir  = split[0]; break;
+                case 1:  fileName = split[0];                          break;
+                default: fileName = "EFTPOS.LOG";                      break;
+            }
+
+            if (fileDir == null)
+                fileDir = EFTRegistry.GetSubkeyStringValue("EVL", "BASE_DIRECTORY", "C:\\PC_EFT\\");
+
+            _eftLogPath = Path.Combine(fileDir, fileName);
+            
+            _eftLogTimer = new Timer(UpdateEftLog, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+        }
+
+        private void UpdateEftLog(object state)
+        {
+            if (Data.EftLogEnabled)
+            {
+                try
+                {
+                    var logSize = (int)new FileInfo(_eftLogPath).Length;
+                    if (_eftLogOffset == EFT_LOG_DISABLED)
+                        _eftLogOffset = logSize; //Eft log just enabled, set initial offset
+                    else if (logSize == _eftLogOffset)
+                        return; //nothing to log
+
+                    if (logSize < _eftLogOffset)
+                        _eftLogOffset = 0; //EFTPOS.LOG File has been cycled, reset offset
+
+                    using (var fs = new FileStream(_eftLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (var sr = new StreamReader(fs, Encoding.Default))
+                    {
+                        fs.Seek(_eftLogOffset, SeekOrigin.Begin);
+                        Data.EftLog += sr.ReadToEnd();
+                    }
+
+                    _eftLogOffset = logSize;
+                }
+                catch (Exception e)
+                {
+                    Data.Log($"Failed to read EFTPOS.LOG ({_eftLogPath}): {e}");
+                }
+            }
+            else
+            {
+                _eftLogOffset = EFT_LOG_DISABLED;
+            }
         }
 
         private void Data_OnDisplayChanged(object sender, EventArgs e)
@@ -74,21 +132,18 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         private async void ProxyVM_OnSendKey(object sender, EFTSendKeyRequest e)
         {
-            if (Data.Settings.IsWoolworthsPOS)
+            if (Data.Settings.IsWoolworthsPOS && e.Key == EFTPOSKey.Authorise)
             {
-                if (e.Key == EFTPOSKey.Authorise)
+                if (e.Data[0] == 'B')
                 {
-                    if (e.Data[0] == 'B')
-                    {
-                        e.Key = EFTPOSKey.Barcode;
-                        e.Data = e.Data.Substring(1);
-                    }
-                    else if (e.Data[0] == 'K')
-                    {
-                        e.Key = EFTPOSKey.Keyed;
-                        e.Data = e.Data.Substring(1);
-                    }
-                }  
+                    e.Key = EFTPOSKey.Barcode;
+                    e.Data = e.Data.Substring(1);
+                }
+                else if (e.Data[0] == 'K')
+                {
+                    e.Key = EFTPOSKey.Keyed;
+                    e.Data = e.Data.Substring(1);
+                }
             }
          
             await eftw.SendKey(e.Key, e.Data);
@@ -185,14 +240,14 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             {
                 return new RelayCommand(o =>
                 {
-                    string request = eftw.requestInProgressString;
+                    string request = eftw.RequestInProgressString;
                     if (MessageBox.Show($"Abandon in progress '{request}'?", $"Abandon '{request}'?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                     {
                         if (eftw.InSlaveMode)
                             _ = eftw.DoSlaveMode(SLAVE_MODE_EXIT);
                         else
                             _ = eftw.SendKey(EFTPOSKey.OkCancel);
-                        eftw.requestInProgress = null;
+                        eftw.RequestInProgress = null;
                     }
                 });
             }
@@ -209,6 +264,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             }
         });
         public RelayCommand ClearLogCommand => new RelayCommand(o => Data.LogMessages = string.Empty);
+        public RelayCommand ClearEftLogCommand => new RelayCommand(o => Data.EftLog = string.Empty);
 
         #endregion
 
@@ -329,8 +385,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 {
                     try
                     {
-                        if (!CheckNoErrorsOnCurrentForm())
-                            throw new InvalidDataException("Invalid data on form");
+                        ThrowOnCurrentFormError();
 
                         var r = new EFTLogonRequest()
                         {
@@ -368,10 +423,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         {
             try
             {
-                if (Data.ConnectedState == ConnectedStatus.Disconnected)
+                if (Data.ConnectedState == ConnectedStatus.Disconnected && !await ConnectAsync())
                 {
-                    if (!await ConnectAsync())
-                        return;
+                    return;
                 }
 
                 Data.Settings.CloudInfo.Password = password;
@@ -399,10 +453,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         {
             try
             {
-                if (Data.ConnectedState == ConnectedStatus.Disconnected)
+                if (Data.ConnectedState == ConnectedStatus.Disconnected && !await ConnectAsync())
                 {
-                    if (!await ConnectAsync())
-                        return;
+                     return;
                 }
 
                 await eftw.CloudTokenLogon(token);
@@ -457,14 +510,12 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         #endregion
 
         #region PadTag
-        private PadTag SetPadTag(PadField padField, bool setTag, string tagName, string newData, bool forceReplace)
+        private void SetPadTag(PadField padField, bool setTag, string tagName, string newData, bool forceReplace)
         {
             if ((padField != null) && setTag && !string.IsNullOrEmpty(newData) && (!padField.HasTag(tagName) || forceReplace))
             {
-                return padField.SetTag(tagName, newData);
+                padField.SetTag(tagName, newData);
             }
-
-            return null;
         }
 
         private void UpdateAndSavePadList(PadField padField)
@@ -482,7 +533,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             }
         }
 
-        PadField AddAutoPadTags(ref PadField pf)
+        void AddAutoPadTags(ref PadField pf)
         {
             SetPadTag(pf, Data.PADAppendAMT, "AMT", decimal.ToInt32(Data.TransactionRequest.AmtPurchase * 100).ToString(), false);
             SetPadTag(pf, Data.PADAppendNME, "NME", "Linkly Test POS", false);
@@ -493,7 +544,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             SetPadTag(pf, Data.PADAppendPCM, "PCM", Data.PADPCMBarcode ? "10000000" : "00000000", false);
             SetPadTag(pf, Data.PADAppendSKU, "SKU", Data.PADSKUId, false);
             SetPadTag(pf, Data.PADAppendRFN, "RFN", Data.LastTxnRFN, false);
-            return pf;
         }
 
         PadField GetPad(bool includeAutoPadTags)
@@ -572,10 +622,13 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             }
         }
 
-        private bool CheckNoErrorsOnCurrentForm()
+        private void ThrowOnCurrentFormError()
         {
             var item = _parent.GetCurrentTabItem();
-            return !Validation.GetHasError(item) && FindAllChildren<TextBox>(item).All(x => !Validation.GetHasError(x));
+            if (Validation.GetHasError(item) || FindAllChildren<TextBox>(item).Any(x => Validation.GetHasError(x)))
+            {
+                throw new InvalidDataException("Invalid data on form");
+            }
         }
 
         public RelayCommand TransactionCommand
@@ -586,8 +639,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 {
                     try
                     {
-                        if (!CheckNoErrorsOnCurrentForm())
-                            throw new InvalidDataException("Invalid data on form");
+                        ThrowOnCurrentFormError();
 
                         Data.TransactionRequest.Track2 = GetAndSaveSelectedTrack2();
 
@@ -598,6 +650,21 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                         Data.TransactionRequest.TxnRef = Data.TransactionReference;
                         Data.TransactionRequest.ReceiptAutoPrint = Data.PrintMode;
                         Data.TransactionRequest.CutReceipt = Data.CutReceiptMode;
+
+                        // Set date and time for Completion and Voucher transactions
+                        if (Data.TransactionRequest.TxnType == TransactionType.Completion
+                            || Data.TransactionRequest.TxnType == TransactionType.Voucher)
+                        {
+                            var dt = DateTime.Now;
+                            Data.TransactionRequest.Date = dt;
+                            Data.TransactionRequest.Time = dt;
+                        }
+                        else
+                        {
+                            Data.TransactionRequest.Date = null;
+                            Data.TransactionRequest.Time = null;
+                        }
+
                         await eftw.DoTransaction(Data.TransactionRequest);
                     }
                     catch (Exception ex)
@@ -616,8 +683,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 {
                     try
                     {
-                        if (!CheckNoErrorsOnCurrentForm())
-                            throw new InvalidDataException("Invalid data on form");
+                        ThrowOnCurrentFormError();
 
                         if (!Data.IsETS)
                         {
@@ -676,6 +742,32 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                     {
                         Data.Log(ex.Message);
                     }
+                });
+            }
+        }
+
+        public RelayCommand OneButtonPresetCommand
+        {
+            get
+            {
+                return new RelayCommand((o) =>
+                {
+                    Data.TerminalString = Data.TerminalList.FirstOrDefault(t => t.Contains(TerminalApplication.ETS.ToString()));
+                    Data.MerchantNumber = ClientData.ONEBUTTON;
+                    Data.TxnTypeIdx = 0; // Redemption (P)
+                });
+            }
+        }
+
+        public RelayCommand EftposPresetCommand
+        {
+            get
+            {
+                return new RelayCommand((o) =>
+                {
+                    Data.TerminalString = Data.TerminalList.FirstOrDefault(t => t.Contains(TerminalApplication.EFTPOS.ToString()));
+                    Data.MerchantNumber = "00";
+                    Data.TxnTypeIdx = 1; // purchase cash (P)
                 });
             }
         }
@@ -796,8 +888,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 {
                     try
                     {
-                        if (!CheckNoErrorsOnCurrentForm())
-                            throw new InvalidDataException("Invalid data on form");
+                        ThrowOnCurrentFormError();
 
                         await eftw.ConfigureMerchant(Data.MerchantDetails);
                     }
@@ -819,10 +910,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 {
                     try
                     {
-                        if (!CheckNoErrorsOnCurrentForm())
-                            throw new InvalidDataException("Invalid data on form");
+                        ThrowOnCurrentFormError();
 
-                        await eftw.DoSettlement(Data.SelectedSettlement, Data.CutReceiptMode, GetPad(false), Data.PrintMode, Data.ResetTotals);
+                        await eftw.DoSettlement(Data.SelectedSettlement, Data.CutReceiptMode, GetPad(false), Data.PrintMode, Data.ResetTotals, Data.Application, Data.MerchantNumber);
                     }
                     catch (Exception e)
                     {
@@ -852,8 +942,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 {
                     try
                     {
-                        if (!CheckNoErrorsOnCurrentForm())
-                            throw new InvalidDataException("Invalid data on form");
+                        ThrowOnCurrentFormError();
 
                         await eftw.QueryCard(GetPad(false), Data.SelectedQuery, Data.MerchantNumber, Data.Application);
                     }
@@ -972,10 +1061,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 {
                     try
                     {
-                        if (!CheckNoErrorsOnCurrentForm())
-                            throw new InvalidDataException("Invalid data on form");
+                        ThrowOnCurrentFormError();
 
-                        if(Data.SelectedCommand == null)
+                        if (Data.SelectedCommand == null)
                         {
                             ExternalData slaveCmd = new ExternalData(Data.CommandRequest, Data.CommandRequest);
                             Data.CommandsList = PadEditor.AddData(SLAVE_CMD_FILENAME, slaveCmd);
@@ -1165,11 +1253,11 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 {
                     await eftw.SendKey(Data.SelectedPosKey, Data.PosData);
                     if (Data.Settings.IsWoolworthsPOS &&
-                       (eftw.requestInProgress != null) && (eftw.requestInProgress.MessageType == typeof(EFTQueryCardRequest)) &&
+                       (eftw.RequestInProgress != null) && (eftw.RequestInProgress.MessageType == typeof(EFTQueryCardRequest)) &&
                        Data.SelectedPosKey == EFTPOSKey.OkCancel && string.IsNullOrWhiteSpace(Data.PosData))
                     {
                         Data.Log($"Woolies: Cancelling In-progress Query Card", LogType.Info);
-                        eftw.requestInProgress = null;
+                        eftw.RequestInProgress = null;
                     }
                 });
             }
@@ -1209,42 +1297,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             }
         }
 
-        //RelayCommand _proxySendKey;
-        //public RelayCommand ProxySendKey => _proxySendKey ?? (_proxySendKey = new RelayCommand(async (o) =>
-        //{
-        //    string name = o.ToString();
-        //    EFTPOSKey key = EFTPOSKey.OkCancel;
-
-        //    if (EnumContains(name, out key))
-        //    {
-        //        await _eftw.SendKey(key, (key == EFTPOSKey.Authorise) ? _data.PosData : string.Empty);
-        //        ShowProxyDialog(false);
-        //    }
-        //}));
-
-        //public RelayCommand ProxySendKey
-        //{
-        //    get
-        //    {
-        //        return new RelayCommand(async (o) =>
-        //        {
-        //            string name = o.ToString();
-        //            EFTPOSKey key = EFTPOSKey.OkCancel;
-
-        //            if (EnumContains(name, out key))
-        //            {
-        //                await _eftw.SendKey(key, (key == EFTPOSKey.Authorise) ? _data.PosData : string.Empty);
-        //                ShowProxyDialog(false);
-        //            }
-        //        });
-        //    }
-        //}
-
-        //public async Task ProxySendKeyFunc(EFTPOSKey key)
-        //{
-        //    await _eftw.SendKey(key);
-        //}
-
         #endregion
 
         #region PIN
@@ -1272,8 +1324,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         #endregion
 
         #region Proxy Dialog
-
-        //public bool ProxyWindowClosing = false;
         public RelayCommand UseProxyDialog
         {
             get
@@ -1305,7 +1355,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                     proxy.Close();
                     proxy = new ProxyDialog
                     {
-                        DataContext = ProxyVM // this;
+                        DataContext = ProxyVM
                     };
                     proxy.Show();
                     ProxyVM.ProxyWindowClosing = false;

@@ -15,7 +15,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
     {
         public event PropertyChangedEventHandler PropertyChanged;
         public event EventHandler<EFTSendKeyRequest> OnSendKey;
-        public char[] trimChars = { (char)0x02, '\0' };
+        public char[] TrimChars { get; set; } = { (char)0x02, '\0' };
 
         protected void OnPropertyChanged(string info)
         {
@@ -27,8 +27,8 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         {
             get
             {
-                _displayDetails.DisplayText[0] = _displayDetails.DisplayText[0].Trim(trimChars);
-                _displayDetails.DisplayText[1] = _displayDetails.DisplayText[1].Trim(trimChars);
+                _displayDetails.DisplayText[0] = _displayDetails.DisplayText[0].Trim(TrimChars);
+                _displayDetails.DisplayText[1] = _displayDetails.DisplayText[1].Trim(TrimChars);
 
                 return _displayDetails;
             }
@@ -112,7 +112,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         private bool EnumContains<T>(string val, out T item)
         {
             bool result = false;
-            item = default(T);
+            item = default;
 
             foreach (var i in Enum.GetValues(typeof(T)))
             {
@@ -158,7 +158,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
               }));
 
 
-        public bool ProxyWindowClosing = false;
+        public bool ProxyWindowClosing { get; set; } = false;
 
 
         public void SendKeyFunc(EFTSendKeyRequest key)

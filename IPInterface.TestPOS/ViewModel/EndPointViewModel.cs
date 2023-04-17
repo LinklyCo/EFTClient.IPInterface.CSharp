@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Runtime.Serialization;
 
 namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 {
@@ -6,6 +7,12 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
     public class EndPointViewModel : INotifyPropertyChanged
     {
+        private EndPointType _priorEndpointType = EndPointType.Undefined;
+        private string _priorClientId = string.Empty;
+        private string _priorPassword = string.Empty;
+        private string _priorPaircode = string.Empty;
+
+
         public override string ToString()
         {
             return name;
@@ -162,9 +169,51 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             set
             {
                 token = value;
+
+                // if paired successfully update values associated with last pairing
+                if (!string.IsNullOrEmpty(token))
+                    SetPriorValues();
+
                 NotifyPropertyChanged(nameof(Token));
             }
         }
 
+        public bool IsTokenStillValid()
+        {
+            // if the token is empty we unpaired or it has never been paired. In which case it is "valid" for
+            // our purposes (that is, not confusing a token for a different set of credentials with the currently
+            // entered ones)
+            if (Token == string.Empty) return true;
+
+            return (Type == _priorEndpointType
+                    && ClientId == _priorClientId
+                    && PairingCode == _priorPaircode
+                    && Password == _priorPassword
+                );
+        }
+
+        /// <summary>
+        /// This is called when we deserialize this. We set the properties needed to track if changes have occurred on save
+        /// to the values they were during deserialization in order to be able to track them
+        /// </summary>
+        [OnDeserialized]
+        internal void OnDeserialized(StreamingContext context)
+        {
+            SetPriorValues();
+        }
+
+
+
+        /// <summary>
+        /// Called whenever the prior values used for tracking config changes need to be updated to the current values
+        /// This is called on deserialization and when the Token changes ( i.e. when we pair successfully)
+        /// </summary>
+        private void SetPriorValues()
+        {
+            _priorClientId = ClientId;
+            _priorEndpointType = Type;
+            _priorPaircode = PairingCode;
+            _priorPassword = Password;
+        }
     }
 }

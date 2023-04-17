@@ -2,7 +2,7 @@
 
 namespace PCEFTPOS.EFTClient.IPInterface
 {
-    class Encoding
+    static class Encoding
     {
         public static long BcdToBin(byte[] buf, int start, int length)
         {

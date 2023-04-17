@@ -214,8 +214,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 string json = JsonConvert.SerializeObject(UpdatedExternalData.ToArray(), Formatting.Indented);
                 File.WriteAllText(_filename, json);
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine(ex);
             }
         }
 
@@ -379,9 +380,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         {
             if (_currentPadIndex < 0)
                 return false;
-
-            var value = string.Empty;
-
 
             // Convert ObservableCollection<PadTagViewModel> into PadField
             var pf = new PadField();

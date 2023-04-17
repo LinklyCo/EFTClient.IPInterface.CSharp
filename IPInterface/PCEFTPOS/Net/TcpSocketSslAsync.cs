@@ -58,10 +58,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
                     return false;
 
                 // Otherwise the socket was connected the last time we used it, send 0 byte packet to see if it still is...
-                if (_clientStream != null)
-                {
-                    await _clientStream.WriteAsync(new byte[1], 0, 0);
-                }
+                await _clientStream.WriteAsync(new byte[1], 0, 0);
             }
             catch (System.IO.IOException e)
             {

@@ -21,21 +21,21 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         /// Set to true when a request is in progress and false when a request ends. Used to limit access to SendRequest
         /// </summary>
         private HistoryViewModel _inProgress = null;
-        public HistoryViewModel requestInProgress
+        public HistoryViewModel RequestInProgress
         {
             get => _inProgress;
             set
             {
-                previousMessage = null;
+                PreviousMessage = null;
                 _inProgress = value;
-                data.InProgress = requestInProgressString;
+                data.InProgress = RequestInProgressString;
             }
         }
-        public HistoryViewModel previousMessage { get; set; } = null;
+        public HistoryViewModel PreviousMessage { get; set; } = null;
 
         public bool InSlaveMode { get; set; }
 
-        public string requestInProgressString
+        public string RequestInProgressString
         {
             get
             {
@@ -98,7 +98,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                     var p = prp.GetValue(atype, new object[] { });
 
                     if (p != null
-                            && prp?.GetCustomAttributes(false)?.FirstOrDefault(a => a.GetType() == typeof(ObsoleteAttribute)) == null)
+                            && prp?.GetCustomAttributes(false)?.FirstOrDefault(a => a is ObsoleteAttribute) == null)
                     {
                         string value = p.ToString();
 
@@ -138,8 +138,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine(ex);
             }
             return d;
         }
@@ -162,25 +163,25 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         private void AddMessageToHistory(HistoryViewModel message)
         {
             data.MessageHistory.Insert(0, message);
-            previousMessage = message;
+            PreviousMessage = message;
         }
 
-        private async Task<bool> SendRequest<ResponseType>(EFTRequest request, bool autoApproveDialogs = false) where ResponseType : EFTResponse
+        private async Task<bool> SendRequest(EFTRequest request, bool autoApproveDialogs = false)
         {
             CancellationToken cancellationToken;
             if (data.IsWoolworthsPOS || request is EFTSlaveRequest)
                 cancellationToken = CancellationToken.None;
             else
                 cancellationToken = new CancellationTokenSource(new TimeSpan(0, 5, 0)).Token;
-            return await SendRequest<ResponseType>(request, cancellationToken, autoApproveDialogs);
+            return await SendRequest(request, cancellationToken, autoApproveDialogs);
         }
 
-        private async Task<bool> SendRequest<ResponseType>(EFTRequest request, CancellationToken cancellationToken, bool autoApproveDialogs = false) where ResponseType : EFTResponse
+        private async Task<bool> SendRequest(EFTRequest request, CancellationToken cancellationToken, bool autoApproveDialogs = false)
         {
             bool result = false;
             bool wooliesSpecial = false;
 
-            if (requestInProgress != null)
+            if (RequestInProgress != null)
             {
                 if (InSlaveMode)
                 {
@@ -207,7 +208,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 await Connect(data.CurrentEndPoint.Address, data.CurrentEndPoint.Port, data.CurrentEndPoint.UseSSL);
             }
 
-            // 
             if (!eft.IsConnected || data.ConnectedState == ConnectedStatus.Disconnected)
             {
                 data.ConnectedState = ConnectedStatus.Disconnected;
@@ -241,7 +241,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 HistoryViewModel requestHistory = new HistoryViewModel(request);
                 AddMessageToHistory(requestHistory);
                 if (!sendOnly)
-                    requestInProgress = requestHistory;
+                    RequestInProgress = requestHistory;
 
                 await eft.WriteRequestAsync(request);
 
@@ -258,7 +258,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                     }
                     else
                     {
-                        HistoryViewModel responseHistory = new HistoryViewModel(r, requestInProgress, previousMessage);
+                        HistoryViewModel responseHistory = new HistoryViewModel(r, RequestInProgress, PreviousMessage);
                         AddMessageToHistory(responseHistory);
 
                         data.LastTxnRespType = r.GetType().Name;
@@ -276,33 +276,29 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                             if (autoApproveDialogs && (r as EFTDisplayResponse).OKKeyFlag)
                             {
                                 EFTSendKeyRequest req = new EFTSendKeyRequest() { Key = EFTPOSKey.OkCancel };
-                                AddMessageToHistory(new HistoryViewModel(req, requestInProgress, previousMessage));
+                                AddMessageToHistory(new HistoryViewModel(req, RequestInProgress, PreviousMessage));
                                 await eft.WriteRequestAsync(req);
                             }
                         }
                         else if (r is EFTReceiptResponse || r is EFTReprintReceiptResponse)
                         {
+                            var receiptResponse = r as EFTReceiptResponse;
+                            var reprintResponse = r as EFTReprintReceiptResponse;
+
                             // Hacked in some preprint and print response timeouts. It ain't pretty and it may not work, but it's my code.
                             #region PrintResponse Timeout
-                            if (data.IsPrePrintTimeOut)
+
+                            if (receiptResponse != null &&
+                                    ((data.IsPrePrintTimeOut && receiptResponse.IsPrePrint) ||
+                                    (data.IsPrintTimeOut && !receiptResponse.IsPrePrint)))
                             {
-                                if ((r as EFTReceiptResponse).IsPrePrint)
-                                {
-                                    Thread.Sleep(59000);
-                                }
-                            }
-                            else if (data.IsPrintTimeOut)
-                            {
-                                if (!(r as EFTReceiptResponse).IsPrePrint)
-                                {
-                                    Thread.Sleep(59000);
-                                }
+                                Thread.Sleep(59000);
                             }
                             #endregion
 
-                            string[] receiptText = (r is EFTReceiptResponse) ? (r as EFTReceiptResponse).ReceiptText : (r as EFTReprintReceiptResponse).ReceiptText;
+                            var receiptText = receiptResponse?.ReceiptText ?? reprintResponse?.ReceiptText ?? Array.Empty<string>();
 
-                            StringBuilder receipt = new StringBuilder();
+                            var receipt = new StringBuilder();
                             foreach (var s in receiptText)
                             {
                                 if (s.Length > 0)
@@ -311,7 +307,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                                 }
                             }
 
-                            if (!string.IsNullOrEmpty(receipt.ToString()))
+                            if (receipt.Length > 0)
                             {
                                 data.Receipt = receipt.ToString();
                             }
@@ -328,10 +324,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
                             data.DisplayDialog(false);
                         }
-                        else if (r is EFTClientListResponse _)
+                        else if (r is EFTClientListResponse x)
                         {
                             int index = 1;
-                            var x = (EFTClientListResponse)r;
                             Dictionary<string, string> ClientList = new Dictionary<string, string>();
                             foreach (var clnt in x.EFTClients)
                             {
@@ -374,12 +369,14 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
                             if (r is EFTStatusResponse status)
                             {
-                                EFTConfigureMerchantRequest merch = new EFTConfigureMerchantRequest();
-                                merch.Catid   = string.IsNullOrWhiteSpace(status.Catid)    ? data.MerchantDetails.Catid   : status.Catid;
-                                merch.Caid    = string.IsNullOrWhiteSpace(status.Caid)     ? data.MerchantDetails.Caid    : status.Caid;
-                                merch.AIIC    = !int.TryParse(status.AIIC, out int parsed) ? data.MerchantDetails.AIIC    : parsed;
-                                merch.NII     = status.NII <= 0                            ? data.MerchantDetails.NII     : status.NII;
-                                merch.Timeout = status.Timeout <= 0                        ? data.MerchantDetails.Timeout : status.Timeout;
+                                EFTConfigureMerchantRequest merch = new EFTConfigureMerchantRequest
+                                {
+                                    Catid = string.IsNullOrWhiteSpace(status.Catid) ? data.MerchantDetails.Catid : status.Catid,
+                                    Caid = string.IsNullOrWhiteSpace(status.Caid) ? data.MerchantDetails.Caid : status.Caid,
+                                    AIIC = !int.TryParse(status.AIIC, out int parsed) ? data.MerchantDetails.AIIC : parsed,
+                                    NII = status.NII <= 0 ? data.MerchantDetails.NII : status.NII,
+                                    Timeout = status.Timeout <= 0 ? data.MerchantDetails.Timeout : status.Timeout
+                                };
                                 data.MerchantDetails = merch;
                             }
 
@@ -392,13 +389,13 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
                         // Only exit loop if we receive the expected response (and are not still in slave mode)
                         if (r.GetType() == request.GetPairedResponseType() && !InSlaveMode)
-                            requestInProgress = null;
+                            RequestInProgress = null;
                     }
                 }
-                while (requestInProgress != null);
+                while (RequestInProgress != null);
 
                 data.Log($"Request: {request} done!");
-                if (requestInProgress == null && data.Settings.IsWoolworthsPOS && !wooliesSpecial)
+                if (RequestInProgress == null && data.Settings.IsWoolworthsPOS && !wooliesSpecial)
                     disconnectOnExit = true;
             }
             catch (TaskCanceledException)
@@ -417,7 +414,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 Disconnect();
                 if(data.Settings.IsWoolworthsPOS)
                     data.ConnectedState = ConnectedStatus.AutoConnect;
-                requestInProgress = null;
+                RequestInProgress = null;
             }
 
             return result;
@@ -441,7 +438,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 {
                     AddMessageToHistory(new HistoryViewModel("Connected"));
                     data.ConnectedState = ConnectedStatus.Connected;
-                    //_checkStatusTimer.Enabled = true;
                     return true;
                 }
             }
@@ -457,7 +453,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         {
             try
             {
-                //_checkStatusTimer.Enabled = false;
                 data.ConnectedState = ConnectedStatus.Disconnected;
                 AddMessageToHistory(new HistoryViewModel("Disconnected"));
                 eft.Disconnect();
@@ -470,15 +465,20 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         #endregion
 
+        public async Task Monitoring(EFTMonitoringRequest eftMonitoringRequest, bool autoApproveDialogs)
+        {
+            await SendRequest(eftMonitoringRequest, autoApproveDialogs);
+        }
+
         #region Logon
         public async Task Logon(EFTLogonRequest eftLogonRequest, bool autoApproveDialogs)
         {
-            await SendRequest<EFTLogonResponse>(eftLogonRequest, autoApproveDialogs);
+            await SendRequest(eftLogonRequest, autoApproveDialogs);
         }
 
         public async Task CloudLogon(string clientId, string password, string pairingCode)
         {
-            await SendRequest<EFTCloudLogonResponse>(new EFTCloudLogonRequest()
+            await SendRequest(new EFTCloudLogonRequest()
             {
                 ClientID = clientId,
                 Password = password,
@@ -488,7 +488,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         public async Task CloudPairingRequest(string clientId, string password, string pairingCode)
         {
-            await SendRequest<EFTCloudPairResponse>(new EFTCloudPairRequest()
+            await SendRequest(new EFTCloudPairRequest()
             {
                 ClientID = clientId,
                 Password = password,
@@ -498,7 +498,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         public async Task<bool> CloudTokenLogon(string token)
         {
-            return await SendRequest<EFTCloudTokenLogonResponse>(new EFTCloudTokenLogonRequest()
+            return await SendRequest(new EFTCloudTokenLogonRequest()
             {
                 Token = token
             });
@@ -544,7 +544,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         {
             while (!token.IsCancellationRequested)
             {
-                await SendRequest<EFTHeartbeatResponse>(new EFTHeartbeatRequest() { Reply = true }, token);
+                await SendRequest(new EFTHeartbeatRequest() { Reply = true }, token);
             }
         }
 
@@ -554,7 +554,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         public async Task DisplayControlPanel(ControlPanelType option, ReceiptCutModeType cutMode, ReceiptPrintModeType printMode)
         {
             // Bug in current EFT-Client - if the first request after connection is EFTControlPanelResponse the EFT-Client fails to respond. Work around is to have a short cancellation timeout
-            await SendRequest<EFTControlPanelResponse>(new EFTControlPanelRequest()
+            await SendRequest(new EFTControlPanelRequest()
             {
                 ControlPanelType = option,
                 CutReceipt = cutMode,
@@ -567,7 +567,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         #region Last Transaction
         public async Task GetLastTransaction()
         {
-            await SendRequest<EFTGetLastTransactionResponse>(new EFTGetLastTransactionRequest(data.OriginalTransactionReference)
+            await SendRequest(new EFTGetLastTransactionRequest(data.OriginalTransactionReference)
             {
                 Application = data.LastTransactionTerminal,
                 Merchant = data.LastReceiptMerchantNumber
@@ -576,7 +576,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         public async Task LastReceipt(ReceiptCutModeType cutMode, ReceiptPrintModeType printMode, ReprintType type)
         {
-            await SendRequest<EFTReprintReceiptResponse>(new EFTReprintReceiptRequest()
+            await SendRequest(new EFTReprintReceiptRequest()
             {
                 CutReceipt = cutMode,
                 ReceiptAutoPrint = printMode,
@@ -632,14 +632,13 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 {
                     Command = basketDataCommand
                 };
-                await SendRequest<EFTBasketDataResponse>(basketRequest);
+                await SendRequest(basketRequest);
 
                 request.PurchaseAnalysisData.SetTag("SKU", data.PADSKUId);
             }
 
 
-            bool result = await SendRequest<EFTTransactionResponse>(request);
-            
+            await SendRequest(request);
         }
         #endregion
 
@@ -647,12 +646,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         public async Task DoClientList(EFTClientListRequest clientListRequest)
         {
-            bool result = await SendRequest<EFTClientListResponse>(clientListRequest);
-            if (result)
-            {
-
-            }
-
+            await SendRequest(clientListRequest);
         }
         #endregion
 
@@ -745,7 +739,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         #region Set Dialog
         public async Task SetDialog(int x, int y, bool displayEvents, DialogPosition pos, string title, bool topMost, DialogType dialogType)
         {
-            await SendRequest<SetDialogResponse>(new SetDialogRequest
+            await SendRequest(new SetDialogRequest
             {
                 DialogX = x,
                 DialogY = y,
@@ -759,7 +753,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         public async Task SetDialog(SetDialogRequest request)
         {
-            await SendRequest<SetDialogResponse>(request);
+            await SendRequest(request);
         }
 
         #endregion
@@ -778,18 +772,18 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             // Special case for '7'. No response event!
             if (request.QueryCardType == QueryCardType.PreSwipeStart)
             {
-                AddMessageToHistory(new HistoryViewModel(request, requestInProgress, previousMessage));
+                AddMessageToHistory(new HistoryViewModel(request, RequestInProgress, PreviousMessage));
                 await eft.WriteRequestAsync(request);
             }
             else
             {
-                await SendRequest<EFTQueryCardResponse>(request);
+                await SendRequest(request);
             }
         }
 
         public async Task QueryCard(PadField pad, QueryCardType cardType, string MerchantId)
         {
-            await SendRequest<EFTQueryCardResponse>(new EFTQueryCardRequest
+            await SendRequest(new EFTQueryCardRequest
             {
                 QueryCardType = cardType,
                 PurchaseAnalysisData = pad,
@@ -801,14 +795,14 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         #region Status
         public async Task GetStatus(EFTStatusRequest request)
         {
-            await SendRequest<EFTStatusResponse>(request, false);
+            await SendRequest(request, false);
         }
         #endregion
 
         #region Config Merchant
         public async Task ConfigureMerchant(int aiic, string merchantId, int nii, string terminalId, int timeout)
         {
-            await SendRequest<EFTConfigureMerchantResponse>(new EFTConfigureMerchantRequest
+            await SendRequest(new EFTConfigureMerchantRequest
             {
                 AIIC = aiic,
                 Caid = merchantId,
@@ -820,21 +814,24 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         public async Task ConfigureMerchant(EFTConfigureMerchantRequest request)
         {
-            await SendRequest<EFTConfigureMerchantResponse>(request);
+            await SendRequest(request);
         }
         #endregion
 
         #region Settlement
         public async Task DoSettlement(SettlementType settlement, ReceiptCutModeType cutMode,
-            PadField padInfo, ReceiptPrintModeType printMode, bool resetTotals)
+            PadField padInfo, ReceiptPrintModeType printMode, bool resetTotals, TerminalApplication app,
+            string merchant)
         {
-            await SendRequest<EFTSettlementResponse>(new EFTSettlementRequest
+            await SendRequest(new EFTSettlementRequest
             {
                 SettlementType = settlement,
                 CutReceipt = cutMode,
                 PurchaseAnalysisData = padInfo,
                 ReceiptAutoPrint = printMode,
-                ResetTotals = resetTotals
+                ResetTotals = resetTotals,
+                Application = app,
+                Merchant = merchant
             });
         }
         #endregion
@@ -842,14 +839,14 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         #region Cheque Auth
         public async Task DoVerifyCheque(EFTChequeAuthRequest request)
         {
-            await SendRequest<EFTChequeAuthResponse>(request);
+            await SendRequest(request);
         }
         #endregion
 
         #region Slave Mode
         public async Task DoSlaveMode(string cmd)
         {
-            await SendRequest<EFTSlaveResponse>(new EFTSlaveRequest
+            await SendRequest(new EFTSlaveRequest
             {
                 RawCommand = cmd
             });
@@ -864,7 +861,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             {
                 bool autoConnect = (this.data.ConnectedState == ConnectedStatus.AutoConnect);
                 EFTSendKeyRequest req = new EFTSendKeyRequest { Data = data, Key = option };
-                AddMessageToHistory(new HistoryViewModel(req, requestInProgress, previousMessage));
+                AddMessageToHistory(new HistoryViewModel(req, RequestInProgress, PreviousMessage));
 
                 if (autoConnect)
                 {
@@ -913,7 +910,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
                 {
                     await Task.Delay(100);
                     EFTSendKeyRequest req = new EFTSendKeyRequest { Key = key };
-                    AddMessageToHistory(new HistoryViewModel(req, requestInProgress, previousMessage));
+                    AddMessageToHistory(new HistoryViewModel(req, RequestInProgress, PreviousMessage));
                     await eft.WriteRequestAsync(req);
                     p.Report(_eftLogs);
                 }
@@ -928,7 +925,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         #region PIN
         public async Task AuthPin()
         {
-            await SendRequest<EFTTransactionResponse>(new EFTTransactionRequest
+            await SendRequest(new EFTTransactionRequest
             {
                 TxnType = TransactionType.AuthPIN
             });
@@ -936,7 +933,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         public async Task ChangePin()
         {
-            await SendRequest<EFTTransactionResponse>(new EFTTransactionRequest
+            await SendRequest(new EFTTransactionRequest
             {
                 TxnType = TransactionType.EnhancedPIN
             });

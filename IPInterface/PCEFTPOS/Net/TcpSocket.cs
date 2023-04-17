@@ -14,19 +14,18 @@ namespace PCEFTPOS.EFTClient.IPInterface
     {
         Socket rawIpSocket;
         SslStream sslStream;
-        AutoResetEvent connectEvent;
+        readonly AutoResetEvent connectEvent;
 
         /// <exclude/>
         AutoResetEvent ConnectEvent { get { return connectEvent; } }
 
         class StateObject
         {
-            Socket _RawIPSocket;
-            SslStream _SslStream;
-            TcpSocket _Client;
-            bool _UseSSL;
-            int _BufferSize;
-            byte[] _Buffer;
+            readonly Socket _RawIPSocket;
+            readonly TcpSocket _Client;
+            readonly bool _UseSSL;
+            readonly int _BufferSize;
+            readonly byte[] _Buffer;
 
             public StateObject(Socket socket, TcpSocket client, bool useSSL)
             {
@@ -40,13 +39,13 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 _RawIPSocket = socket;
                 _BufferSize = bufferSize;
                 _Buffer = new byte[bufferSize];
-                _SslStream = sslStream;
+                SslStream = sslStream;
                 _Client = client;
                 _UseSSL = useSSL;
             }
 
             public Socket RawIpSocket { get { return _RawIPSocket; } }
-            public SslStream SslStream { get { return _SslStream; } set { _SslStream = value; } }
+            public SslStream SslStream { get; set; }
             public bool UseSSL { get { return _UseSSL; } }
             public int BufferSize { get { return _BufferSize; } }
             public byte[] Buffer { get { return _Buffer; } }

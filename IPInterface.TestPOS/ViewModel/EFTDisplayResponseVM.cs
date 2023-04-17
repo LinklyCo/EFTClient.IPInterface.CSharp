@@ -2,7 +2,7 @@
 
 namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 {
-    public class EFTDisplayResponseVM : INotifyPropertyChanged
+    public class EFTDisplayResponseVM
     {
         /// <summary>Constructs a default display response object.</summary>
         public EFTDisplayResponseVM(EFTDisplayResponse m)
@@ -22,11 +22,11 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         /// <summary>Number of lines to display.</summary>
         /// <value>Type: <see cref="System.Int32" /></value>
-        public int NumberOfLines { get; set; } = 2;
+        public int NumberOfLines { get; set; }
 
         /// <summary>Number of character per display line.</summary>
         /// <value>Type: <see cref="System.Int32" /></value>
-        public int LineLength { get; set; } = 20;
+        public int LineLength { get; set; }
 
         /// <summary>Text to be displayed. Each display line is concatenated.</summary>
         /// <value>Type: <see cref="System.String" >String array</see></value>
@@ -57,7 +57,5 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         public GraphicCode GraphicCode { get; set; }
 
         public PadField PurchaseAnalysisData { get; set; }
-
-        public event PropertyChangedEventHandler PropertyChanged;
     }
 }

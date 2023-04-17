@@ -24,6 +24,6 @@
         public char Subcode { get; set; }
 
         /// <summary>If we receive a heartbeat response, it worked!</summary>
-        public bool Success => true;
+        public bool Success { get; set; }
     }
 }

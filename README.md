@@ -203,12 +203,40 @@ class EFTClientIPDemoAsync
 
 ## Release notes
 
+### 1.7.3 (2023-03-31)
+* [STRY0228186] Removing length check from EFTQueryCardRespons, will parse response if it doesn't have PAD data
+* [STRY0228186] Correctly parsing `EFTGetLastResponse` by adding missing `ClearedFundsBalance`
+  * This fixes an issue where PAD data was being omitted
+
+### 1.7.2 (2022-09-13)
+* Add "Simulated Host" pinpad network type option.
+
+### 1.7.1 (2022-08-31)
+* Add ability to open the client GUI main dialog.
+
+### 1.7.0 (2022-07-18)
+* Adds handling for sending and recieving Monitoring ('|') messages
+
+### 1.6.11 (2022-06-28)
+* Adds DataField property to EFTTransactionRequest, required for AuthPIN ('X') and EnhancedPIN ('K') Transaction Types
+* Adds required special handling of AuthPIN ('X') and EnhancedPIN ('K') Transaction Types to DefaultMessageParser
+* Similarly adds (provisional) handling of recieving PINRequest ('W') responses to DefaultMessageParser, which is recieved from client in response to Transaction Rquests of the above two transaction types.
+
+### 1.6.10 (2022-06-22)
+* Implementing hardening changes suggested by Static Code Analysis
+		
+### 1.6.9 (2022-06-16)
+* Update IPInterface to compile against .NET 6
+
 ### 1.6.8 (2022-06-07)
-* Consolidating IPInterface version numbers
+* Fixes for SonarCloud Static Code Analysis
 * Added SSL Certificate checking for non-async EFT-Client Interface
 * Fixing syntax for some XML comments
-* Fixing minor logic inconsistancies in demo apps
-* Making Slave command variables consistent in style
+
+### 1.6.7 (2022-04-22)
+* Consolidating IPInterface version numbers
+
+### 1.6.6 (2022-03-29)
 * 'StringExtension.StrLen' function now returns correct values when startIndex argument has a non-zero value
 * 'IntegerExtension.PadLeft' no longer throws an exception if called on a negative
 * 'DecimalExtension.PadLeft' no longer throws an exception if called on a negative
@@ -219,25 +247,26 @@ class EFTClientIPDemoAsync
 * Removed (many of but not all) of the "magic strings" used by DefaultMessageParser when generating EFTRequests
 * Updated property names on ControlPanelRequest and EFTControlPanelRequest to be in line with spec and other EFTRequests. Old property names have been marked obsolete, but are still supported.
 * EFTClientIPAsync now correctly disposes it's wrapped ITCPSocketAsync when it replaces it with a new connection and when it itself is disposed
+
+### 1.6.5 (2022-03-15)
 * Aligning `EFTTerminalType` enum list with spec
-* Fixing Null reference exception when receiving data using EFTClientIP and no subscribed DialogUIHandler)
+
+### 1.6.4.0 (2022-02-24)
+* Fixing Null reference exception when receiving data using EFTClientIP and no subscribed DialogUIHandler
+
+### 1.6.3.0 (16/12/2021)
 * Adding StanVb field to resolve ambiguity in VB.Net due to case-insensitivity
+
+### 1.6.2.0 (15/12/2021)
 * Fixed CancellationTokenSource memory leak
-
-### 1.5.0.0 (2020-01-28)
-* Added Demo POS for product level blocking transactions
-* TEST & Async POS updated to support new cloud pairing process
-
-### 1.4.5.0 (2018-12-14)
-* Added in Void transaction type...
-* Added in a check on msg length for parsing Duplicate Receipt responses so it can handle TPP duplicate responses
-* Fixed 'Display Swipe Card' slave command
-* Added in support for Input On POS display requests
-* Added in MerchantNumber field for GetLastReceipt
 
 ### 1.4.4.0 (27/09/2019)
 * Added new IPnterface calls for CloudPairing Request/Response and CloudTokenLogon Request/Response
 * Updated TestPOS to support new Cloud pairing and cloud token request/response
+
+### 1.4.3.0 (2018-10-09)
+* Deleted a hard-coded TxnRef in TestPOS GetLast and ReprintReceipt command
+* Fixed bug in MessageParser that padded the TxnRef rather than leaving it blank, so the EFTClient didn't like it
 
 ### 1.4.3.0 (2018-10-09)
 * Deleted a hard-coded TxnRef in TestPOS GetLast and ReprintReceipt command

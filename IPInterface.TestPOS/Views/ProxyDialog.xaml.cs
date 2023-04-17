@@ -13,21 +13,12 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
         {
             InitializeComponent();
         }
-
-        private void Window_Closed(object sender, System.EventArgs e)
-        {
-
-        }
-
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             var d = (ProxyViewModel)DataContext;
-            if (d != null)
+            if (d != null && !d.ProxyWindowClosing)
             {
-                if (!d.ProxyWindowClosing)
-                {
-                    d.SendKeyFunc(new EFTSendKeyRequest() { Key = EFTPOSKey.OkCancel });
-                }
+                  d.SendKeyFunc(new EFTSendKeyRequest() { Key = EFTPOSKey.OkCancel });
             }
         }
     }

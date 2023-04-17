@@ -140,10 +140,10 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
         public string Token { get; set; } = "";
         public bool TokenLogon { get; set; } = false;
         [JsonIgnore]
-        public string Password = string.Empty;
+        public string Password { get; set; } = string.Empty;
 
         [JsonProperty]
-        ICredentialLocker _locker = new CredentialLocker();
+        readonly ICredentialLocker _locker = new CredentialLocker();
 
         public void ClearLoginDetails()
         {

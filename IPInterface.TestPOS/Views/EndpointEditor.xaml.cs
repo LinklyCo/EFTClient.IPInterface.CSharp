@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Input;
+using IPInterface.TestPOS.Utils;
 
 namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
 {
@@ -51,6 +52,16 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
 
         private void Save()
         {
+            // on save if we updated any of the credentials fields without re-pairing then unpair that connection
+            // to prevent confusion
+            foreach (var endPoint in vm.EndPoints)
+            {
+                if (!endPoint.IsTokenStillValid())
+                {
+                    endPoint.Token = "";
+                }
+            }
+
             var svm = new EndPointEditorViewModel()
             {
                 EndPoints = new ObservableCollection<EndPointViewModel>(vm.EndPoints.Where(ep => !ep.AutoLoadedKey))
@@ -170,15 +181,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
         {
             var result = new ObservableCollection<EndPointViewModel>();
 
-            RegistryKey csdKey = null;
+            RegistryKey csdKey = EFTRegistry.OpenRegistryBaseKey();
             try
             {
-                csdKey = Registry.LocalMachine.OpenSubKey("SOFTWARE\\CullenSoftwareDesign", RegistryKeyPermissionCheck.ReadSubTree);
-                if (csdKey == null)
-                {
-                    csdKey = Registry.LocalMachine.OpenSubKey("SOFTWARE\\WOW6432Node\\CullenSoftwareDesign", RegistryKeyPermissionCheck.ReadSubTree);
-                }
-                
                 var eftClientKeys = csdKey?.GetSubKeyNames()?.Where(n => n.StartsWith("EFTCLIENT"));
                 if (eftClientKeys != null)
                 {

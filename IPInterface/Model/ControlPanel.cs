@@ -23,7 +23,11 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Show the control panel with only the status tab available.</summary>
         [Description("Status Page ('4')")]
-        Status = '4'
+        Status = '4',
+
+        /// <summary>Show the main dialog.</summary>
+        [Description("Main Dialog ('5')")]
+        MainDialog = '5'
     }
 
     /// <summary>Indicates when to trigger the <see cref="EFTClientIP.OnDisplayControlPanel"/> event.</summary>

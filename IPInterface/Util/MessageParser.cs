@@ -23,7 +23,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         {
             Logon = 'G', Transaction = 'M', QueryCard = 'J', Configure = '1', ControlPanel = '5', SetDialog = '2', Settlement = 'P',
             DuplicateReceipt = 'C', GetLastTransaction = 'N', Status = 'K', Receipt = '3', Display = 'S', GenericPOSCommand = 'X', PINRequest = 'W',
-            ChequeAuth = 'H', SendKey = 'Y', ClientList = 'Q', CloudLogon = 'A', Heartbeat = 'F'
+            ChequeAuth = 'H', SendKey = 'Y', ClientList = 'Q', CloudLogon = 'A', Heartbeat = 'F', Monitoring = '|'
         }
 
         #region StringToEFTResponse
@@ -92,7 +92,14 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 case IPClientResponseType.Heartbeat:
                     eftResponse = ParseHeartbeatResponse(msg);
                     break;
+                case IPClientResponseType.Monitoring:
+                    eftResponse = ParseMonitoringResponse(msg);
+                    break;
                 case IPClientResponseType.PINRequest:
+                    // 'W' response come from the EFT-Client when Transaction messages with a TXN Type of 'K' (EnhancedPIN) or 'X' (AuthPIN)
+                    // are sent to it.
+                    eftResponse = ParseEFTTransactionResponse(msg);
+                    break;
                 case IPClientResponseType.SendKey:
                 default:
                     throw new ArgumentException($"Unknown message type: {msg}", nameof(msg));
@@ -101,13 +108,17 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return eftResponse;
         }
 
-
-        T TryParse<T>(string input, int length, ref int index)
+        static T TryParse<T>(string input, ref int index)
+        {
+            return TryParse<T>(input, input.Length - index, ref index);
+        }
+        
+        static T TryParse<T>(string input, int length, ref int index)
         {
             return TryParse<T>(input, length, ref index, "");
         }
 
-        T TryParse<T>(string input, int length, ref int index, string format)
+        static T TryParse<T>(string input, int length, ref int index, string format)
         {
             T result = default;
 
@@ -130,10 +141,9 @@ namespace PCEFTPOS.EFTClient.IPInterface
                         else
                             result = (T)Convert.ChangeType(data, typeof(T));
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        var idx = index;
-                        //Log(LogLevel.Error, tr => tr.Set($"Unable to parse field. Input={input}, Index={idx}, Length={length}"));
+                        System.Diagnostics.Debug.WriteLine(ex);
                     }
                     finally
                     {
@@ -147,7 +157,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return result;
         }
 
-        EFTResponse ParseEFTTransactionResponse(string msg)
+        static EFTResponse ParseEFTTransactionResponse(string msg)
         {
             var index = 1;
 
@@ -179,12 +189,12 @@ namespace PCEFTPOS.EFTClient.IPInterface
             r.BalanceReceived = TryParse<bool>(msg, 1, ref index);
             r.AvailableBalance = TryParse<decimal>(msg, 9, ref index) / 100;
             r.ClearedFundsBalance = TryParse<decimal>(msg, 9, ref index) / 100;
-            r.PurchaseAnalysisData = new PadField(TryParse<string>(msg, msg.Length - index, ref index));
+            r.PurchaseAnalysisData = new PadField(TryParse<string>(msg, ref index));
 
             return r;
         }
 
-        EFTResponse ParseEFTGetLastTransactionResponse(string msg)
+        static EFTResponse ParseEFTGetLastTransactionResponse(string msg)
         {
             var index = 1;
 
@@ -202,13 +212,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 msg = msg.Substring(0, index) + char.ToUpper(msg[index]) + msg.Substring(index + 1);
             }
             r.TxnType = TryParse<TransactionType>(msg, 1, ref index);
-            string accountType = TryParse<string>(msg, 7, ref index);
-
-            if (accountType == "Credit ") r.AccountType = AccountType.Credit;
-            else if (accountType == "Savings") r.AccountType = AccountType.Savings;
-            else if (accountType == "Cheque ") r.AccountType = AccountType.Cheque;
-            else r.AccountType = AccountType.Default;
-
+            r.AccountType = r.AccountType.FromString(TryParse<string>(msg, 7, ref index));
             r.AmtCash = TryParse<decimal>(msg, 9, ref index) / 100;
             r.AmtPurchase = TryParse<decimal>(msg, 9, ref index) / 100;
             r.AmtTip = TryParse<decimal>(msg, 9, ref index) / 100;
@@ -225,17 +229,16 @@ namespace PCEFTPOS.EFTClient.IPInterface
             r.Track2 = TryParse<string>(msg, 40, ref index);
             r.RRN = TryParse<string>(msg, 12, ref index);
             r.CardName = TryParse<int>(msg, 2, ref index);
-            string txnFlags = TryParse<string>(msg, 8, ref index);
-            r.TxnFlags = new TxnFlags(txnFlags.ToCharArray());
+            r.TxnFlags = new TxnFlags(TryParse<string>(msg, 8, ref index).ToCharArray());
             r.BalanceReceived = TryParse<bool>(msg, 1, ref index);
             r.AvailableBalance = TryParse<decimal>(msg, 9, ref index) / 100;
-            int padLength = TryParse<int>(msg, 3, ref index);
-            r.PurchaseAnalysisData = new PadField(TryParse<string>(msg, padLength, ref index));
+            r.ClearedFundsBalance = TryParse<decimal>(msg, 9, ref index) / 100;
+            r.PurchaseAnalysisData = new PadField(TryParse<string>(msg, ref index));
 
             return r;
         }
 
-        EFTResponse ParseSetDialogResponse(string msg)
+        static EFTResponse ParseSetDialogResponse(string msg)
         {
             var index = 1;
 
@@ -246,7 +249,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        EFTResponse ParseEFTLogonResponse(string msg)
+        static EFTResponse ParseEFTLogonResponse(string msg)
         {
             var index = 1;
 
@@ -263,12 +266,12 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 r.Date = TryParse<DateTime>(msg, 12, ref index, "ddMMyyHHmmss");
                 r.Stan = TryParse<int>(msg, 6, ref index);
                 r.PinPadVersion = TryParse<string>(msg, 16, ref index);
-                r.PurchaseAnalysisData = new PadField(TryParse<string>(msg, msg.Length - index, ref index));
+                r.PurchaseAnalysisData = new PadField(TryParse<string>(msg, ref index));
             }
             return r;
         }
 
-        EFTResponse ParseDisplayResponse(string msg)
+        static EFTResponse ParseDisplayResponse(string msg)
         {
             int index = 1;
 
@@ -288,6 +291,23 @@ namespace PCEFTPOS.EFTClient.IPInterface
             r.GraphicCode = TryParse<GraphicCode>(msg, 1, ref index);
             int padLength = TryParse<int>(msg, 3, ref index);
             r.PurchaseAnalysisData = new PadField(TryParse<string>(msg, padLength, ref index));
+
+            return r;
+        }
+
+        static EFTResponse ParseMonitoringResponse(string msg)
+        {
+            int index = 1;
+
+            var r = new EFTMonitoringResponse();
+            r.MonitoringType = TryParse<char>(msg, 1, ref index);
+            r.ResponseCode = TryParse<string>(msg, 2, ref index);
+            r.ResponseText = TryParse<string>(msg, 20, ref index);
+            r.Merchant = TryParse<string>(msg, 2, ref index);
+            r.ProductCode = TryParse<string>(msg, 2, ref index);
+            var versionStr = TryParse<string>(msg, 12, ref index);
+            r.Version = new Version(versionStr.Trim());
+            r.Data = msg.Substring(index); // the rest of the message is the data
 
             return r;
         }
@@ -335,7 +355,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        EFTResponse ParseControlPanelResponse(string msg)
+        static EFTResponse ParseControlPanelResponse(string msg)
         {
             int index = 1;
 
@@ -348,7 +368,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        EFTResponse ParseEFTReprintReceiptResponse(string msg)
+        static EFTResponse ParseEFTReprintReceiptResponse(string msg)
         {
             int index = 1;
 
@@ -387,7 +407,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        EFTResponse ParseEFTSettlementResponse(string msg)
+        static EFTResponse ParseEFTSettlementResponse(string msg)
         {
             var index = 1;
 
@@ -397,94 +417,12 @@ namespace PCEFTPOS.EFTClient.IPInterface
             r.ResponseCode = TryParse<string>(msg, 2, ref index);
             r.ResponseText = TryParse<string>(msg, 20, ref index);
 
-            if (msg.Length > 25)
-            {
-                r.SettlementData = msg.Substring(index);
-
-                //int cardCount = int.Parse( response.Substring( index, 9 ) ); index += 9;
-                //for( int i = 0; i < cardCount; i++ )
-                //{
-                //    int cardTotalsDataLength = int.Parse( response.Substring( index, 3 ) ); index += 3;
-                //    if( cardTotalsDataLength >= 69 )
-                //    {
-                //        SettlementCardTotals cardTotals = new SettlementCardTotals();
-                //        cardTotals.CardName = response.Substring( index, 20 ); index += 20;
-                //        try { cardTotals.PurchaseAmount = decimal.Parse( response.Substring( index, 9 ) ) / 100; }
-                //        catch { cardTotals.PurchaseAmount = 0; }
-                //        finally { index += 9; }
-                //        try { cardTotals.PurchaseCount = int.Parse( response.Substring( index, 3 ) ); }
-                //        catch { cardTotals.PurchaseCount = 0; }
-                //        finally { index += 3; }
-                //        try { cardTotals.CashOutAmount = decimal.Parse( response.Substring( index, 9 ) ) / 100; }
-                //        catch { cardTotals.CashOutAmount = 0; }
-                //        finally { index += 9; }
-                //        try { cardTotals.CashOutCount = int.Parse( response.Substring( index, 3 ) ); }
-                //        catch { cardTotals.CashOutCount = 0; }
-                //        finally { index += 3; }
-                //        try { cardTotals.RefundAmount = decimal.Parse( response.Substring( index, 9 ) ) / 100; }
-                //        catch { cardTotals.RefundAmount = 0; }
-                //        finally { index += 9; }
-                //        try { cardTotals.RefundCount = int.Parse( response.Substring( index, 3 ) ); }
-                //        catch { cardTotals.RefundCount = 0; }
-                //        finally { index += 3; }
-                //        try { cardTotals.TotalAmount = decimal.Parse( response.Substring( index, 10 ), System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowLeadingWhite ) / 100; }
-                //        catch { cardTotals.TotalAmount = 0; }
-                //        finally { index += 9; }
-                //        try { cardTotals.TotalCount = int.Parse( response.Substring( index, 3 ) ); }
-                //        catch { cardTotals.TotalCount = 0; }
-                //        finally { index += 3; }
-                //        displayResponse.SettlementCardData.Add( cardTotals );
-                //        index += cardTotalsDataLength - 69;
-                //    }
-                //}
-
-                //int totalsDataLength = int.Parse( response.Substring( index, 3 ) ); index += 3;
-                //if( totalsDataLength >= 69 )
-                //{
-                //    SettlementTotals settleTotals = new SettlementTotals();
-                //    settleTotals.TotalsDescription = response.Substring( index, 20 ); index += 20;
-                //    try { settleTotals.PurchaseAmount = decimal.Parse( response.Substring( index, 9 ) ) / 100; }
-                //    catch { settleTotals.PurchaseAmount = 0; }
-                //    finally { index += 9; }
-                //    try { settleTotals.PurchaseCount = int.Parse( response.Substring( index, 3 ) ); }
-                //    catch { settleTotals.PurchaseCount = 0; }
-                //    finally { index += 3; }
-                //    try { settleTotals.CashOutAmount = decimal.Parse( response.Substring( index, 9 ) ) / 100; }
-                //    catch { settleTotals.CashOutAmount = 0; }
-                //    finally { index += 9; }
-                //    try { settleTotals.CashOutCount = int.Parse( response.Substring( index, 3 ) ); }
-                //    catch { settleTotals.CashOutCount = 0; }
-                //    finally { index += 3; }
-                //    try { settleTotals.RefundAmount = decimal.Parse( response.Substring( index, 9 ) ) / 100; }
-                //    catch { settleTotals.RefundAmount = 0; }
-                //    finally { index += 9; }
-                //    try { settleTotals.RefundCount = int.Parse( response.Substring( index, 3 ) ); }
-                //    catch { settleTotals.RefundCount = 0; }
-                //    finally { index += 3; }
-                //    try { settleTotals.TotalAmount = decimal.Parse( response.Substring( index, 10 ), System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowLeadingWhite ) / 100; }
-                //    catch { settleTotals.TotalAmount = 0; }
-                //    finally { index += 9; }
-                //    try { settleTotals.TotalCount = int.Parse( response.Substring( index, 3 ) ); }
-                //    catch { settleTotals.TotalCount = 0; }
-                //    finally { index += 3; }
-                //    displayResponse.TotalsData = settleTotals;
-                //    index += totalsDataLength - 69;
-                //}
-
-                //int padLength;
-                //try
-                //{
-                //    padLength = int.Parse( response.Substring( index, 3 ) );
-                //    displayResponse.PurchaseAnalysisData = response.Substring( index, padLength ); index += padLength;
-                //}
-                //catch { padLength = 0; }
-                //finally { index += 3; }
-            }
+            r.SettlementData = TryParse<string>(msg, ref index);
 
             return r;
         }
 
-        EFTResponse ParseQueryCardResponse(string msg)
+        static EFTResponse ParseQueryCardResponse(string msg)
         {
             int index = 1;
 
@@ -496,58 +434,40 @@ namespace PCEFTPOS.EFTClient.IPInterface
                 ResponseText = TryParse<string>(msg, 20, ref index)
             };
 
-            if (msg.Length >= 158)
+            r.Track2 = TryParse<string>(msg, 40, ref index);
+
+            string track1or3 = TryParse<string>(msg, 80, ref index);
+            char trackFlag = TryParse<char>(msg, 1, ref index);
+            switch (trackFlag)
             {
-                r.Track2 = msg.Substring(index, 40); index += 40;
-
-                string track1or3 = msg.Substring(index, 80); index += 80;
-
-                char trackFlag = msg[index++];
-                switch (trackFlag)
-                {
-                    case '1':
-                        r.TrackFlags = TrackFlags.Track1;
-                        r.Track1 = track1or3;
-                        break;
-                    case '2':
-                        r.TrackFlags = TrackFlags.Track2;
-                        break;
-                    case '3':
-                        r.TrackFlags = TrackFlags.Track1 | TrackFlags.Track2;
-                        r.Track1 = track1or3;
-                        break;
-                    case '4':
-                        r.TrackFlags = TrackFlags.Track3;
-                        r.Track3 = track1or3;
-                        break;
-                    case '6':
-                        r.TrackFlags = TrackFlags.Track2 | TrackFlags.Track3;
-                        r.Track3 = track1or3;
-                        break;
-                }
-
-                r.CardName = int.Parse(msg.Substring(index, 2)); index += 2;
-
-                //Dodgy hack here to cover a big customer not prefixing the PAD data with a length
-                int remainingLen = msg.StrLen(index);
-                if (remainingLen > 3)
-                {
-                    if(int.TryParse(msg.Substring(index, 3), out int padLen))
-                    {
-                        index += 3;
-                    }
-                    else
-                    {
-                        padLen = remainingLen;
-                    }
-                    r.PurchaseAnalysisData = new PadField(TryParse<string>(msg, padLen, ref index));
-                }
+                case '1':
+                    r.TrackFlags = TrackFlags.Track1;
+                    r.Track1 = track1or3;
+                    break;
+                case '2':
+                    r.TrackFlags = TrackFlags.Track2;
+                    break;
+                case '3':
+                    r.TrackFlags = TrackFlags.Track1 | TrackFlags.Track2;
+                    r.Track1 = track1or3;
+                    break;
+                case '4':
+                    r.TrackFlags = TrackFlags.Track3;
+                    r.Track3 = track1or3;
+                    break;
+                case '6':
+                    r.TrackFlags = TrackFlags.Track2 | TrackFlags.Track3;
+                    r.Track3 = track1or3;
+                    break;
             }
+
+            r.CardName = TryParse<int>(msg, 2, ref index);
+            r.PurchaseAnalysisData = new PadField(TryParse<string>(msg, ref index));
 
             return r;
         }
 
-        EFTResponse ParseClientListResponse(string msg)
+        static EFTResponse ParseClientListResponse(string msg)
         {
             var r = new EFTClientListResponse();
             // Get rid of the junk at the beginning, will look like #Q000001
@@ -577,7 +497,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
                     r.EFTClients.Add(newClient);
                 }
             }
-            else if (msg.IndexOf('|') == -1)
+            else if (!msg.Contains('|'))
             {
                 EFTClientListResponse.EFTClient newClient = new EFTClientListResponse.EFTClient();
                 // Each client 'string' will be surrounded by {} so we get rid of them
@@ -600,18 +520,19 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        EFTResponse ParseHeartbeatResponse(string msg)
+        static EFTResponse ParseHeartbeatResponse(string msg)
         {
             int index = 1;
 
             var r = new EFTHeartbeatResponse()
             {
-                Subcode = TryParse<char>(msg, 1, ref index)
+                Subcode = TryParse<char>(msg, 1, ref index),
+                Success = true
             };
             return r;
         }
 
-        EFTResponse ParseEFTConfigureMerchantResponse(string msg)
+        static EFTResponse ParseEFTConfigureMerchantResponse(string msg)
         {
             int index = 1;
 
@@ -624,7 +545,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        EFTResponse ParseEFTStatusResponse(string msg)
+        static EFTResponse ParseEFTStatusResponse(string msg)
         {
             int index = 1;
 
@@ -678,7 +599,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        TerminalCommsType ParseTerminalCommsType(char CommsType)
+        static TerminalCommsType ParseTerminalCommsType(char CommsType)
         {
             TerminalCommsType commsType = TerminalCommsType.Unknown;
 
@@ -688,7 +609,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return commsType;
         }
 
-        KeyHandlingType ParseKeyHandlingType(char KeyHandlingScheme)
+        static KeyHandlingType ParseKeyHandlingType(char KeyHandlingScheme)
         {
             KeyHandlingType keyHandlingType = KeyHandlingType.Unknown;
 
@@ -698,7 +619,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return keyHandlingType;
         }
 
-        EFTTerminalType ParseEFTTerminalType(string terminalType)
+        static EFTTerminalType ParseEFTTerminalType(string terminalType)
         {
             var eftTerminalType = EFTTerminalType.Unknown;
             switch(terminalType.ToLower())
@@ -753,7 +674,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return eftTerminalType;
         }
 
-        PINPadOptionFlags ParseStatusOptionFlags(char[] Flags)
+        static PINPadOptionFlags ParseStatusOptionFlags(char[] Flags)
         {
             PINPadOptionFlags flags = 0;
             int index = 0;
@@ -772,11 +693,11 @@ namespace PCEFTPOS.EFTClient.IPInterface
             if (Flags[index++] == '1') flags |= PINPadOptionFlags.Training;
             if (Flags[index++] == '1') flags |= PINPadOptionFlags.Withdrawal;
             if (Flags[index++] == '1') flags |= PINPadOptionFlags.Transfer;
-            if (Flags[index++] == '1') flags |= PINPadOptionFlags.StartCash;
+            if (Flags[index] == '1') flags |= PINPadOptionFlags.StartCash;
             return flags;
         }
 
-        EFTResponse ParseChequeAuthResponse(string msg)
+        static EFTResponse ParseChequeAuthResponse(string msg)
         {
             int index = 1;
 
@@ -801,7 +722,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        EFTResponse ParseGenericPOSCommandResponse(string msg)
+        static EFTResponse ParseGenericPOSCommandResponse(string msg)
         {
             // Validate response length
             if (string.IsNullOrEmpty(msg))
@@ -860,7 +781,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return null;
         }
 
-        EFTResponse ParseConfigMerchantResponse(string msg)
+        static EFTResponse ParseConfigMerchantResponse(string msg)
         {
             int index = 1;
 
@@ -873,7 +794,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        EFTResponse ParseCloudLogonResponse(string msg)
+        static EFTResponse ParseCloudLogonResponse(string msg)
         {
             int index = 1;
             char subcode = TryParse<char>(msg, 1, ref index);
@@ -922,7 +843,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             };
         }
 
-        EFTResponse ParseBasketDataResponse(string msg)
+        static EFTResponse ParseBasketDataResponse(string msg)
         {
             int index = 1; // msg[0] is the command code
 
@@ -999,10 +920,12 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return request.ToString();
         }
 
-        private StringBuilder BuildRequest(EFTRequest eftRequest)
+        private static StringBuilder BuildRequest(EFTRequest eftRequest)
         {
             switch (eftRequest)
             {
+                case EFTMonitoringRequest r:
+                    return BuildEFTMonitoringRequest(r);
                 case EFTLogonRequest r:
                     return BuildEFTLogonRequest(r);
                 case EFTTransactionRequest r:
@@ -1054,11 +977,17 @@ namespace PCEFTPOS.EFTClient.IPInterface
             throw new ArgumentException("Unknown EFTRequest type", nameof(eftRequest));
         }
 
-        StringBuilder BuildEFTTransactionRequest(EFTTransactionRequest v)
+        static StringBuilder BuildEFTTransactionRequest(EFTTransactionRequest v)
         {
             var r = new StringBuilder();
-            r.Append(EFTRequestCommandCode.Transaction);
-            r.Append("0");
+
+            // 
+            if (v.TxnType == TransactionType.EnhancedPIN || v.TxnType == TransactionType.AuthPIN)
+                r.Append(EFTRequestCommandCode.PINAuth);
+            else
+                r.Append(EFTRequestCommandCode.Transaction);
+
+            r.Append('0');
             r.Append(v.Merchant.PadRightAndCut(2));
             r.Append((char)v.TxnType);
             r.Append(v.TrainingMode ? '1' : '0');
@@ -1076,17 +1005,28 @@ namespace PCEFTPOS.EFTClient.IPInterface
             r.Append((char)v.AccountType);
             r.Append(v.Application.ToApplicationString());
             r.Append(v.RRN.PadRightAndCut(12));
-            r.Append(v.CurrencyCode.PadRightAndCut(3));
-            r.Append((char)v.OriginalTxnType);
-            r.Append(v.Date != null ? v.Date.Value.ToString("ddMMyy") : "      ");
-            r.Append(v.Time != null ? v.Time.Value.ToString("HHmmss") : "      ");
-            r.Append(" ".PadRightAndCut(8)); // Reserved
-            r.Append(v.PurchaseAnalysisData.GetAsString(true));
+
+            if (v.TxnType == TransactionType.EnhancedPIN || v.TxnType == TransactionType.AuthPIN)
+            {
+                // these message types have a different format than usual. The only thing included
+                // after the RRN is the DataField
+                r.Append(v.DataField.Length.PadLeft(3));
+                r.Append(v.DataField);
+            }
+            else
+            {
+                r.Append(v.CurrencyCode.PadRightAndCut(3));
+                r.Append((char)v.OriginalTxnType);
+                r.Append(v.Date != null ? v.Date.Value.ToString("ddMMyy") : "      ");
+                r.Append(v.Time != null ? v.Time.Value.ToString("HHmmss") : "      ");
+                r.Append(" ".PadRightAndCut(8)); // Reserved
+                r.Append(v.PurchaseAnalysisData.GetAsString(true));
+            }
 
             return r;
         }
 
-        StringBuilder BuildEFTLogonRequest(EFTLogonRequest v)
+        static StringBuilder BuildEFTLogonRequest(EFTLogonRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.Logon);
@@ -1099,7 +1039,25 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        StringBuilder BuildEFTReprintReceiptRequest(EFTReprintReceiptRequest v)
+        static StringBuilder BuildEFTMonitoringRequest(EFTMonitoringRequest v)
+        {
+            var r = new StringBuilder();
+            r.Append(EFTRequestCommandCode.Monitoring);
+            r.Append(v.MonitoringType);
+            r.Append(v.Merchant.PadRightAndCut(2));
+            r.Append(v.Application.ToApplicationString());
+            r.Append(v.ProductCode);
+            r.Append($"{v.Version.Major}.{v.Version.Minor}.{v.Version.Revision}".PadRightAndCut(12));
+            if (v.Data.Length > 9994 - r.Length) // 9994 to account for the '#' and length field at the start of *every* message
+            {
+                throw new ArgumentException($"{nameof(v.Data)} exceeds max size of {9994 - r.Length}", nameof(v));
+            }
+
+            r.Append(v.Data);
+            return r;
+        }
+
+        static StringBuilder BuildEFTReprintReceiptRequest(EFTReprintReceiptRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.ReprintReceipt);
@@ -1112,18 +1070,18 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        StringBuilder BuildEFTGetLastTransactionRequest(EFTGetLastTransactionRequest v)
+        static StringBuilder BuildEFTGetLastTransactionRequest(EFTGetLastTransactionRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.GetLastTransaction);
-            r.Append("0");
+            r.Append('0');
             r.Append(v.Application.ToApplicationString());
             r.Append(v.Merchant.PadRightAndCut(2));
             r.Append(v.TxnRef.Length > 0 ? v.TxnRef.PadRightAndCut(16) : "");
             return r;
         }
 
-        StringBuilder BuildSetDialogRequest(SetDialogRequest v)
+        static StringBuilder BuildSetDialogRequest(SetDialogRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.SetDialog);
@@ -1137,7 +1095,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        StringBuilder BuildControlPanelRequest(EFTControlPanelRequest v)
+        static StringBuilder BuildControlPanelRequest(EFTControlPanelRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.DisplayControlPanel); // ControlPanel
@@ -1148,7 +1106,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        StringBuilder BuildSettlementRequest(EFTSettlementRequest v)
+        static StringBuilder BuildSettlementRequest(EFTSettlementRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.Settlement);
@@ -1162,7 +1120,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        StringBuilder BuildQueryCardRequest(EFTQueryCardRequest v)
+        static StringBuilder BuildQueryCardRequest(EFTQueryCardRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.QueryCard);
@@ -1173,7 +1131,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        StringBuilder BuildConfigMerchantRequest(EFTConfigureMerchantRequest v)
+        static StringBuilder BuildConfigMerchantRequest(EFTConfigureMerchantRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.ConfigureMerchant);
@@ -1188,7 +1146,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        StringBuilder BuildStatusRequest(EFTStatusRequest v)
+        static StringBuilder BuildStatusRequest(EFTStatusRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.Status);
@@ -1198,11 +1156,11 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        StringBuilder BuildChequeAuthRequest(EFTChequeAuthRequest v)
+        static StringBuilder BuildChequeAuthRequest(EFTChequeAuthRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.ChequeAuth);
-            r.Append("0");
+            r.Append('0');
             r.Append(v.Application.ToApplicationString());
             r.Append(' ');
             r.Append(v.BranchCode.PadRightAndCut(6));
@@ -1215,7 +1173,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        StringBuilder BuildGetPasswordRequest(EFTGetPasswordRequest v)
+        static StringBuilder BuildGetPasswordRequest(EFTGetPasswordRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.Generic);
@@ -1227,7 +1185,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        StringBuilder BuildSlaveRequest(EFTSlaveRequest v)
+        static StringBuilder BuildSlaveRequest(EFTSlaveRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.Generic);
@@ -1237,48 +1195,48 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        StringBuilder BuildGetClientListRequest(EFTClientListRequest _)
+        static StringBuilder BuildGetClientListRequest(EFTClientListRequest _)
         {
             return new StringBuilder(EFTRequestCommandCode.GetClientList + "0");
         }
 
-        StringBuilder BuildCloudLogonRequest(EFTCloudLogonRequest v)
+        static StringBuilder BuildCloudLogonRequest(EFTCloudLogonRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.CloudLogon);
-            r.Append(" ");
+            r.Append(' ');
             r.Append(v.ClientID.PadRightAndCut(16));
             r.Append(v.Password.PadRightAndCut(16));
             r.Append(v.PairingCode.PadRightAndCut(16));
             return r;
         }
 
-        StringBuilder BuildCloudPairRequest(EFTCloudPairRequest v)
+        static StringBuilder BuildCloudPairRequest(EFTCloudPairRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.CloudLogon);
-            r.Append("P");
+            r.Append('P');
             r.Append(v.ClientID.PadRightAndCut(16));
             r.Append(v.Password.PadRightAndCut(16));
             r.Append(v.PairingCode.PadRightAndCut(16));
             return r;
         }
 
-        StringBuilder BuildCloudTokenLogonRequest(EFTCloudTokenLogonRequest v)
+        static StringBuilder BuildCloudTokenLogonRequest(EFTCloudTokenLogonRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.CloudLogon);
-            r.Append("T");
+            r.Append('T');
             r.Append(v.Token.Length.PadLeft(3));
             r.Append(v.Token);
             return r;
         }
 
-        StringBuilder BuildSendKeyRequest(EFTSendKeyRequest v)
+        static StringBuilder BuildSendKeyRequest(EFTSendKeyRequest v)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.SendKey);
-            r.Append("0");
+            r.Append('0');
             r.Append((char)v.Key);
             if (v.Data?.Length > 0)
             {
@@ -1288,12 +1246,12 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        StringBuilder BuildReceiptRequest(EFTReceiptRequest _)
+        static StringBuilder BuildReceiptRequest(EFTReceiptRequest _)
         {
             return new StringBuilder(EFTRequestCommandCode.Receipt + " ");
         }
 
-        StringBuilder BuildPayAtTableRequest(EFTPayAtTableRequest request)
+        static StringBuilder BuildPayAtTableRequest(EFTPayAtTableRequest request)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.Generic);
@@ -1304,7 +1262,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        StringBuilder BuildHeartbeatRequest(EFTHeartbeatRequest request)
+        static StringBuilder BuildHeartbeatRequest(EFTHeartbeatRequest request)
         {
             var r = new StringBuilder();
             r.Append(EFTRequestCommandCode.Heartbeat);
@@ -1313,7 +1271,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return r;
         }
 
-        StringBuilder BuildBasketDataRequest(EFTBasketDataRequest request)
+        static StringBuilder BuildBasketDataRequest(EFTBasketDataRequest request)
         {
             var jsonContent = "{}";
 
@@ -1392,7 +1350,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             }
 
             var r = new StringBuilder();
-            r.Append("X");
+            r.Append('X');
             r.Append((char)CommandType.BasketData);
             r.Append(jsonContent.Length.PadLeft(6));
             r.Append(jsonContent);
@@ -1415,7 +1373,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             return string.Empty;
         }
 
-        private string EFTRequestToXMLString(EFTPosAsPinpadRequest eftRequest)
+        private static string EFTRequestToXMLString(EFTPosAsPinpadRequest eftRequest)
         {
             try
             {

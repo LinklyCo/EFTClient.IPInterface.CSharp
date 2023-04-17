@@ -24,7 +24,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         }
 
         [JsonIgnore]
-        public ObservableCollection<string> AccountTypes { get; } = new ObservableCollection<string>();
+        public ObservableCollection<string> AccountTypes { get; }
 
         EndPointViewModel currentItem = null;
         public EndPointViewModel CurrentItem

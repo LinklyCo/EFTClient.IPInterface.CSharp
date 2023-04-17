@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PCEFTPOS.EFTClient.IPInterface.TestPOS"
         xmlns:Views="clr-namespace:PCEFTPOS.EFTClient.IPInterface.TestPOS.Views"
+        xmlns:ipinterface="clr-namespace:PCEFTPOS.EFTClient.IPInterface;assembly=PCEFTPOS.EFTClient.IPInterface"
         mc:Ignorable="d"
         Title="{Binding AppTitle}"
         Width="1280"
@@ -301,6 +302,47 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="TxnDataFieldWrapPanelVisibility" TargetType="WrapPanel">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Data.TransactionRequest.TxnType}" Value="{x:Static ipinterface:TransactionType.AuthPIN}" />
+                        <Condition Binding="{Binding Data.IsETS}" Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Visibility" Value="Visible"/>
+                </MultiDataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Data.TransactionRequest.TxnType}" Value="{x:Static ipinterface:TransactionType.EnhancedPIN}" />
+                        <Condition Binding="{Binding Data.IsETS}" Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Visibility" Value="Visible"/>
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
+
+        <Style x:Key="HiddenForPINTxnTypes" TargetType="FrameworkElement">
+            <Setter Property="Visibility" Value="Visible"/>
+            <Style.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Data.TransactionRequest.TxnType}" Value="{x:Static ipinterface:TransactionType.AuthPIN}" />
+                        <Condition Binding="{Binding Data.IsETS}" Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </MultiDataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Data.TransactionRequest.TxnType}" Value="{x:Static ipinterface:TransactionType.EnhancedPIN}" />
+                        <Condition Binding="{Binding Data.IsETS}" Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
     </Window.Resources>
 
     <Grid x:Name="ParentGrid" Margin="5">
@@ -486,19 +528,20 @@
                 </TabItem>
                 <TabItem Header="Transaction">
                     <StackPanel Margin="0,0,0,4">
-                        <CheckBox x:Name="btnOneButton" Content="One Button preset" Margin="5,5,0,0" IsChecked="{Binding Data.IsOneButton}"/>
                         <WrapPanel HorizontalAlignment="Left" Margin="5,5,0,0" >
-                            <CheckBox x:Name="chkTxnType" Height="27" Content="App Number:" 
-                                  IsChecked="{Binding Data.IsETS, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="115" FontSize="12"/> <!-- FIXME: Looks like there might be a bug here. If this is checked, the txn type options are mapped to ETS, even when to EFTPOS -->
+                            <Button x:Name="BtnEftposPreset" Content="Eftpos Preset" Command="{Binding EftposPresetCommand}" Margin="5,5,0,0" />
+                            <Button x:Name="BtnOneButtonPreset" Content="One Button Preset" Command="{Binding OneButtonPresetCommand}"  Margin="5,5,0,0" />
+                        </WrapPanel>
+                        <WrapPanel HorizontalAlignment="Left" Margin="5,5,0,0" >
+                            <Label x:Name="chkTxnType" Height="27" Content="App Number:" Width="115" FontSize="12"/> <!-- FIXME: Looks like there might be a bug here. If this is checked, the txn type options are mapped to ETS, even when to EFTPOS -->
                             <!--<Label Content="Type" Height="27" Width="120" FontSize="12"/>-->
                             <ComboBox x:Name="cboEtsType" HorizontalAlignment="Left" VerticalAlignment="Top" Width="128" Height="27" 
                                           ItemsSource="{Binding Data.TerminalList}" SelectedItem="{Binding Data.TerminalString, Mode=TwoWay}" 
-                                          SelectedIndex="0" IsEnabled="{Binding ElementName=chkTxnType, Path=IsChecked}" />
+                                          SelectedIndex="0" />
                             <Label Content="Merchant Number"/>
 
                             <ComboBox x:Name="CboMerchantNumber" Width="64" Height="27" 
                                           ItemsSource="{Binding Data.MerchantNumberList}" Text="{Binding Data.MerchantNumber, Mode=TwoWay}" 
-                                          IsEnabled="{Binding ElementName=chkTxnType, Path=IsChecked}"
                                           TextSearch.TextPath="MerchantNumber"
                                           SelectedIndex="0" IsTextSearchEnabled="True" IsEditable="True" >
                                 <ComboBox.ItemTemplate>
@@ -537,9 +580,9 @@
                             <TextBox x:Name="txtTAuthNum" Height="27" Width="90" FontSize="12" 
                                                 Text="{Binding Data.TransactionRequest.AuthNumber}" HorizontalContentAlignment="Right"/>
 
-                            <Label x:Name="lblTRRN" Content="RRN" Height="27" Width="100" FontSize="12" />
+                            <Label x:Name="lblTRRN" Content="RRN" Height="27" Width="100" FontSize="12" Style="{StaticResource HiddenForPINTxnTypes}"/>
                             <TextBox x:Name="txtTRRN" Height="27" Width="90" FontSize="12" 
-                                                Text="{Binding Data.TransactionRequest.RRN}"/>
+                                                Text="{Binding Data.TransactionRequest.RRN}" Style="{StaticResource HiddenForPINTxnTypes}"/>
                         </WrapPanel>
                         <WrapPanel HorizontalAlignment="Left" Margin="0,5,0,0">
                             <Label x:Name="lblTPanSrc" Content="PAN Source" Height="27" Width="120" FontSize="12" />
@@ -583,7 +626,7 @@
                                 <TextBox x:Name="txtTPanExp" Height="27" FontSize="12" Width="85" Text="{Binding Data.TransactionRequest.ExpiryDate}"/>
                             </WrapPanel>
                         </StackPanel>
-                        <WrapPanel HorizontalAlignment="Left" Margin="0,5,0,0">
+                        <WrapPanel HorizontalAlignment="Left" Margin="0,5,0,0" Style="{StaticResource HiddenForPINTxnTypes}">
                             <Label x:Name="lblTCurrCode" Content="Currency Code" Height="27" Width="120" FontSize="12" />
 
                             <ComboBox x:Name="cboTCurrCode" Height="27" Width="64" FontSize="12"
@@ -593,7 +636,7 @@
                             </ComboBox>
 
                         </WrapPanel>
-                        <WrapPanel HorizontalAlignment="Left" Margin="0,5,0,0">
+                        <WrapPanel HorizontalAlignment="Left" Margin="0,5,0,0" Style="{StaticResource HiddenForPINTxnTypes}">
                             <Label x:Name="lblTOrigTxnType" Content="Original Txn Type" Height="27" Width="120" FontSize="12" />
                             <ComboBox x:Name="cboOrigTxnType" HorizontalAlignment="Left" VerticalAlignment="Top" Width="128" Height="27" FontSize="12" 
                                             ItemsSource="{Binding Data.TransactionList}" SelectedItem="{Binding Data.OriginalTxnType}"
@@ -605,13 +648,13 @@
                             <CheckBox x:Name="chkPrintTime" Content="Print Timeout" IsChecked="{Binding Data.IsPrintTimeOut}" />
                             <CheckBox x:Name="chkPrePrintTime" Content="PrePrint Timeout" IsChecked="{Binding Data.IsPrePrintTimeOut}" />
                         </WrapPanel>
-                        <GroupBox Header="PAD" Margin="0,5,0,0">
+                        <GroupBox Header="PAD" Margin="0,5,0,0" Style="{StaticResource HiddenForPINTxnTypes}">
                             <StackPanel>
                                 <WrapPanel HorizontalAlignment="Left" Margin="0,0,0,0">
                                     <Label Content="PAD Content" Height="27" Width="120" FontSize="12" VerticalAlignment="Top"/>
                                     <ComboBox x:Name="cboTPad" HorizontalAlignment="Left" VerticalAlignment="Top" Width="320" Height="27" FontSize="12" 
                                     ItemsSource="{Binding Data.PadItemsList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                    Text="{Binding Data.SelectedPad}" IsEditable="True" KeyUp="cboTPad_KeyUp">
+                                    Text="{Binding Data.SelectedPad}" IsEditable="True" KeyUp="CboTPad_KeyUp">
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
@@ -650,7 +693,12 @@
                                 </ComboBox>
                             </StackPanel>
                         </GroupBox>
-                        <WrapPanel>
+                        <WrapPanel Margin="0,5,0,0" Style="{StaticResource TxnDataFieldWrapPanelVisibility}">
+                            <Label Content="Data Field" Height="27" Width="100" FontSize="12" />
+                            <TextBox x:Name="txtDataField" Height="27" FontSize="12" Width="127"  MaxLength="6"
+                                     Text="{Binding Data.TransactionRequest.DataField}"/>
+                        </WrapPanel>
+                        <WrapPanel Margin="0,5,0,0">
                             <Button x:Name="btnTransaction" Content="Transaction" Command="{Binding TransactionCommand}" Style="{StaticResource ButtonTxnStyle}"/>
                             <Button x:Name="btnQueryTransaction" Content="Query + Transaction" Command="{Binding QueryTransaction}" Style="{StaticResource ButtonTxnStyle}"/>
                         </WrapPanel>
@@ -658,6 +706,24 @@
                 </TabItem>
                 <TabItem Header="Status">
                     <StackPanel >
+                        <WrapPanel HorizontalAlignment="Left" Margin="5" >
+                            <Label Content="App Number: " Height="27" Width="128"/>
+                            <ComboBox x:Name="CboStatusEtsType" HorizontalAlignment="Left" VerticalAlignment="Top" Width="128" Height="27" 
+                                      ItemsSource="{Binding Data.TerminalList}" SelectedItem="{Binding Data.TerminalString, Mode=TwoWay}" 
+                                      SelectedIndex="0"/>
+                            <Label Content="Merchant Number"/>
+                            <ComboBox Width="64" Height="27" 
+                                      ItemsSource="{Binding Data.MerchantNumberList}" Text="{Binding Data.MerchantNumber, Mode=TwoWay}" 
+                                      TextSearch.TextPath="MerchantNumber"
+                                      SelectedIndex="0" IsTextSearchEnabled="True" IsEditable="True" >
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Description2}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+
+                        </WrapPanel>
                         <DockPanel VerticalAlignment="Top" HorizontalAlignment="Left">
                             <Label Content="Status Type: " Height="35" Width="100" Margin="0,0,5,0"/>
                             <ComboBox x:Name="cboStatusType" Height="25" Width="178" Margin="0,0,5,0" ItemsSource="{Binding Data.StatusList}" SelectedItem="{Binding Data.SelectedStatus}" SelectedIndex="0">
@@ -1084,7 +1150,7 @@
             </GridSplitter>
 
             <!-- RESULTS -->
-            <TabControl Grid.Column="3" MinHeight="150" SelectionChanged="tcUtilities_SelectionChanged">
+            <TabControl Grid.Column="3" MinHeight="150" SelectionChanged="TcUtilities_SelectionChanged">
                 <TabItem Header="Response" FontSize="12">
                     <DockPanel>
                         <Label DockPanel.Dock="Top" Content="{Binding Data.LastTxnRespType}" Padding="5,2,5,0"/>
@@ -1152,7 +1218,7 @@
                 <Label Grid.Column="0" Content="Utilities" Height="28"/>
                 <TextBlock Grid.Column="2" VerticalAlignment="Center"><Hyperlink Command="{Binding AbandonInProgressCommand}"><Run Text="{Binding Path=Data.InProgress}"/></Hyperlink></TextBlock>
             </Grid>
-            <TabControl x:Name="tcUtilities" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SelectionChanged="tcUtilities_SelectionChanged">
+            <TabControl x:Name="tcUtilities" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" SelectionChanged="TcUtilities_SelectionChanged">
                 <TabItem x:Name="tbiLogs" Header="Logs">
                     <TabItem.Resources>
                         <Style TargetType="TabItem">
@@ -1190,6 +1256,21 @@
                                             Background="#FFEEEEF7" Text="{Binding Data.Settings.Notes}" AcceptsReturn="True"
                                             />
                     </ScrollViewer>
+                </TabItem>
+                <TabItem x:Name="tbiEftposLogs" Header="EFTPOS.LOG">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
+                            <CheckBox x:Name="chkEftLog" Content="Enabled" Width="70"  Margin="0,0,5,0" IsChecked="{Binding Data.EftLogEnabled}"/>
+                            <Button Content="Clear" Margin="2" Padding="3,0"  Style="{Binding SmallButtonStyle}" Command="{Binding ClearEftLogCommand}"/>
+                        </StackPanel>
+                        <ScrollViewer x:Name="svEftLog" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                                       VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                            <TextBox x:Name="tbEftLog" IsReadOnly="True" FontSize="12" MinWidth="350"
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                      HorizontalContentAlignment="Left" VerticalContentAlignment="Top"
+                                      Background="#FFEEEEF7" Text="{Binding Data.EftLog}" FontFamily="Courier New" />
+                        </ScrollViewer>
+                    </DockPanel>
                 </TabItem>
             </TabControl>
         </Grid>

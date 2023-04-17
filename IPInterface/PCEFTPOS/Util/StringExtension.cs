@@ -1,4 +1,7 @@
-﻿namespace PCEFTPOS.EFTClient.IPInterface
+﻿using System;
+using System.Collections.Generic;
+
+namespace PCEFTPOS.EFTClient.IPInterface
 {
     public static class StringExtension
     {
@@ -97,5 +100,38 @@
         /// <param name="original">String to convert</param>
         /// <returns>Converted string</returns>
         public static string FromVisibleSpaces(this string original) => original.Replace('˽', ' ').Replace('→', '\t').Replace("↙", "\r\n").Replace('↓', '\n').Replace('←', '\r');
+
+        public static string[] SplitLast(this string original, char[] delimiters, int count, StringSplitOptions options)
+        {
+            if (count < 1)
+                throw new ArgumentException("count must be greater than zero");
+
+            var split = new List<string>();
+
+            var idx = original.LastIndexOfAny(delimiters);
+            while (idx != -1)
+            {
+                split.Insert(0, original.Substring(idx + 1));
+                original = original.Substring(0, idx);
+                if (--count <= 0)
+                    break;
+                idx = original.LastIndexOfAny(delimiters);
+            }
+            split.Insert(0, original);
+
+            if (options == StringSplitOptions.RemoveEmptyEntries)
+                split.RemoveAll((x) => x == "");
+
+            return split.ToArray();
+        }
+
+        public static string[] SplitLast(this string original, char[] delimiters, int count) =>
+            original.SplitLast(delimiters, count, StringSplitOptions.None);
+
+        public static string[] SplitLast(this string original, char[] delimiters, StringSplitOptions options) =>
+            original.SplitLast(delimiters, 1, options);
+
+        public static string[] SplitLast(this string original, char[] delimiters) =>
+            original.SplitLast(delimiters, 1, StringSplitOptions.None);
     }
 }

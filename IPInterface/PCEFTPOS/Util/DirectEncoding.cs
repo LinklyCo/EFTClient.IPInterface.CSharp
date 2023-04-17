@@ -8,7 +8,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
     public class DirectEncoding : System.Text.Encoding
     {
         private static volatile DirectEncoding instance;
-        private static object syncRoot = new Object();
+        private static readonly object syncRoot = new Object();
 
         private DirectEncoding()
         {
@@ -139,27 +139,5 @@ namespace PCEFTPOS.EFTClient.IPInterface
         {
             return new String(this.GetChars(bytes, index, count));
         }
-
-        private void Test()
-        {
-            int i;
-            string s = "";
-            byte[] bytes;
-            char[] chars = new char[255];
-
-
-            for (i = 0; i < 255; i++) s += (char)i;
-            bytes = DirectEncoding.DIRECT.GetBytes(s);
-
-            for (i = 0; i < 255; i++) chars[i] = (char)i;
-            bytes = DirectEncoding.DIRECT.GetBytes(chars);
-
-            for (i = 0; i < 255; i++) chars[i] = (char)i;
-            s = new String(chars, 0, chars.Length);
-            bytes = DirectEncoding.DIRECT.GetBytes(s);
-        }
-
-
-
     }
 }

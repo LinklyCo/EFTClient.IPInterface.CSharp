@@ -1,0 +1,13 @@
+﻿<Window x:Class="IPInterface.UIInterfaceDemo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:IPInterface.UIInterfaceDemo"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="350" Width="525" ResizeMode="CanMinimize">
+    <Grid Margin="20">
+        <Button x:Name="BtnLogon" Grid.Row="0" Content="Asynchronous" Click="BtnLogon_Click" Margin="0,0,240,0" FontSize="20"/>
+        <Button x:Name="BtnNonAsync" Content="Synchronous" Margin="242,0,0,0" Click="BtnNonAsync_Click" FontSize="20"/>
+    </Grid>
+</Window>

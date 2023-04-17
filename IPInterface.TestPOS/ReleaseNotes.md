@@ -1,5 +1,49 @@
 # Release Notes
 
+## v1.11.14 31/03/2023 Robert Whitlock
+- [STRY0228186] Built with new IPInterface v1.7.3
+  - Last Transaction should now parse `ClearedFundsBalance` and `PurchaseAnalysisData`
+  - Query Card response should now be parsed even if no PAD data provided
+
+## v1.11.13 15/03/2023 Aaron Zimmermann
+- [STRY0182893] Fixed issue where Test POS was not sending app number and merchant number for a settlement
+- [STRY0182873] Fixed issue where Test POS was sending old date and time from completion or voucher transactions in other transactions
+
+## v1.11.12 31/08/2022 Andrew Pritchard
+- [STRY0202930] Added ability to open client GUI main dialog
+
+## v1.11.11 26/08/2022 Robert Whitlock
+- Fixing crash on launch if no EVL/FILESPEC registry setting
+
+## v1.11.10 29/07/2022 Robert Whitlock
+- Bumping version to make new artifact with all dll dependencies (change in Release Pipeline)
+
+## v1.11.9 20/07/2022 Daniel Parubotchy
+- [STRY0182900] Build with IPInterface v1.7.0 
+
+## v1.11.8 28/06/2022 Daniel Parubotchy
+- [STRY0182900] Added "Data Field" element to Transaction screen, only visible when both TxnType 'K' or 'X' is selected AND the selected App Number isn't ETS
+- [STRY0182900] Build with IPInterface v1.6.11 
+
+## v1.11.7 28/06/2022 Robert Whitlock
+- [STRY0195664] Added EFTPOS.LOG tab to bottom bar
+
+## v1.11.6 24/06/2022 Daniel Parubotchy
+- [STRY0182974] Token is now cleared if changes to user credentials are saved
+
+## v1.11.5 23/06/2022 Andrew Pritchard
+- [STRY0182705] Build with IPInterface v1.6.10
+- [STRY0182705] Implementing hardening changes suggested by Static Code Analysis
+- [STRY0187306] Removed "Account Verify" Option from Logon tab
+
+## v1.11.4 21/06/2022 Daniel Parubotchy
+- [STRY0182873] Completion and Voucher commands now set Date and Time fields correctly
+- [STRY0182859] Added App and Merchant selection to Status tab
+
+## v1.11.3 20/06/2022 Daniel Parubotchy
+- [DFCT0010951] Replaced Onebutton Preset checkbox with button
+- [DFCT0010951] Added a Eftpos preset button
+
 ## v1.11.2 07/06/2022 Robert Whitlock
 - [STRY0192268] Build with IPInterface v1.6.8
 - [STRY0192268] Making Slave command variables consistent in style

@@ -175,6 +175,8 @@ namespace PCEFTPOS.EFTClient.IPInterface
         Leased = '1',
         /// <summary>Dial-up bank connection.</summary>
         Dialup = '2',
+        /// <summary>A simulated connection to the bank. Can be used for development and training purposes.</summary>
+        SimulatedHost = '3',
         /// <summary>Unknown bank connection.</summary>
         Unknown
     }

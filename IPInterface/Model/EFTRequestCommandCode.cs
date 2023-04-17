@@ -6,9 +6,11 @@ namespace PCEFTPOS.EFTClient.IPInterface
 {
     public static class EFTRequestCommandCode
     {
+        public const char Monitoring = '|';
         public const char Logon = 'G';
         public const char CloudLogon = 'A';
         public const char Transaction = 'M';
+        public const char PINAuth = 'W';
         public const char QueryCard = 'J';
         public const char ConfigureMerchant = '1';
         public const char ReprintReceipt = 'C';

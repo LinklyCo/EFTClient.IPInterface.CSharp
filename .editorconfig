@@ -1,0 +1,20 @@
+﻿[*.cs]
+
+# This rule has been disabled since `new()` is not supported in net45. We may
+# be able to re-enable this if we drop support for net45.
+# IDE0090: Use 'new(...)'
+dotnet_diagnostic.IDE0090.severity = none
+
+# This rule has been disabled since using the range operator is not supported
+# in net45. We may be able to re-enable this if we drop support for net45.
+# IDE0057: Use range operator
+dotnet_diagnostic.IDE0057.severity = none
+
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = warning
+
+# S101: Types should be named in PascalCase
+dotnet_diagnostic.S101.severity = none
+
+# IDE1006: Naming Styles
+dotnet_diagnostic.IDE1006.severity = warning

@@ -462,6 +462,13 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// 
         /// </summary>
         public int CVV { get; set; } = 0; //Not sent to EFT-Client
+
+        /// <summary>
+        /// Used for 'K' (EnhancedPIN) and 'X' (AuthPIN) Transaction Types ONLY.
+        /// Is ignored when building messages from a request object for all other TXN types
+        /// </summary>
+        /// <remarks>Can't have a length that exceeds 3 digits</remarks>
+        public string DataField { get; set; } = string.Empty;
     }
 
     /// <summary>A PC-EFTPOS terminal transaction response object.</summary>

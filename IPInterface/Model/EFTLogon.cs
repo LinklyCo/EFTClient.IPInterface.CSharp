@@ -35,11 +35,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
         /// <summary>Enables diagnostics.</summary>
         [Description("Diagnostics ('1')")]
-        Diagnostics = '1',
-
-        /// <summary>Verify card and request token</summary>
-        [Description("Account Verify ('A')")]
-        AccountVerify = 'A'
+        Diagnostics = '1'
     }
 
     /// <summary>A PC-EFTPOS terminal logon request object.</summary>

@@ -71,7 +71,6 @@ namespace PCEFTPOS.EFTClient.IPInterface
         #region Data
 
         SynchronizationContext syncContext;
-        IMessageParser _parser;
         ITcpSocket _socket;
         EFTRequest currentRequest;
         AutoResetEvent hideDialogEvent;
@@ -400,7 +399,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
         {
             recvBuf = "";
             recvTickCount = 0;
-            _parser = new DefaultMessageParser();
+            Parser = new DefaultMessageParser();
 
             _socket = _createSocketDelegate(HostName, HostPort);
 
@@ -450,16 +449,15 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
                     case EFTReceiptResponse r:
                         SendReceiptAcknowledgement();
-                        Log(LogLevel.Info, tr => tr.Set($"IsPrePrint={((EFTReceiptResponse)response).IsPrePrint}"));
+                        Log(LogLevel.Info, tr => tr.Set($"IsPrePrint={r.IsPrePrint}"));
 
-                        if (r.IsPrePrint == false)
+                        if (!r.IsPrePrint)
                         {
                             FireClientResponseEvent(nameof(OnReceipt), OnReceipt, new EFTEventArgs<EFTReceiptResponse>(r));
                         }
                         break;
 
                     case EFTDisplayResponse r:
-                        //DialogUIHandler?.HandleDisplayResponse(r);
                         FireClientResponseEvent(nameof(OnDisplay), OnDisplay, new EFTEventArgs<EFTDisplayResponse>(r));
                         break;
 
@@ -551,7 +549,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
             try
             {
-                requestString = _parser.EFTRequestToString(eftRequest);
+                requestString = Parser.EFTRequestToString(eftRequest);
             }
             catch (Exception e)
             {
@@ -637,7 +635,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
                         EFTResponse eftResponse = null;
                         try
                         {
-                            eftResponse = _parser.StringToEFTResponse(response);
+                            eftResponse = Parser.StringToEFTResponse(response);
                             ProcessEFTResponse(eftResponse);
                             if (eftResponse.GetType() == _currentStartTxnRequest?.GetPairedResponseType())
                             {
@@ -824,18 +822,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             }
         }
 
-        public IMessageParser Parser
-        {
-            get
-            {
-                return _parser;
-            }
-            set
-            {
-                _parser = value;
-            }
-        }
-
+        public IMessageParser Parser { get; set; }
 
         #endregion
 

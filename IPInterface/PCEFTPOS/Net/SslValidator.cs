@@ -12,10 +12,16 @@ namespace PCEFTPOS.EFTClient.IPInterface
         public delegate void DoLog(LogLevel level, Action<TraceRecord> traceAction);
 
         private readonly DoLog _log;
+
+        private readonly bool _isDebug = false;
+
         private readonly string[] _customRootCerts;
 
         public SslValidator(DoLog log = null)
         {
+#if (DEBUG)
+            _isDebug = true;
+#endif
             _log = log;
             _customRootCerts = FindCustomRootCerts();
         }
@@ -66,9 +72,11 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <returns>TRUE if the certificate is valid, FALSE otherwise</returns>
         public bool RemoteCertificateValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
-#if (DEBUG)
-            return true;
-#else
+            if (_isDebug)
+            {
+                return true;
+            }
+
             // Certificate chain is valid via a commercial 3rd party chain 
             if (sslPolicyErrors == SslPolicyErrors.None)
             {
@@ -135,7 +143,6 @@ namespace PCEFTPOS.EFTClient.IPInterface
 
             LogRemoteCertificateFailure(certificate, chain, sslPolicyErrors);
             return false;
-#endif
         }
     }
 }

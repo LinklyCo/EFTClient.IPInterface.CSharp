@@ -10,8 +10,8 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         public IEFTClientIPAsync EFTClientIPAsync { get; set; }
         private EFTDisplayResponse _displayResponse = new EFTDisplayResponse();
         public event PropertyChangedEventHandler PropertyChanged;
-        public TestDialogUI eftDialog = null;
-        public bool ProxyWindowClosing = false;
+        public TestDialogUI EftDialog { get; set; } = null;
+        public bool ProxyWindowClosing { get; set; } = false;
 
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
@@ -33,12 +33,12 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         public Task HandleCloseDisplayAsync()
         {
-            if (eftDialog != null)
+            if (EftDialog != null)
             {
-                eftDialog.Close();
-                eftDialog.BtnOK.Click -= BtnOK_Click;
-                eftDialog.BtnCancel.Click -= BtnCancel_Click;
-                eftDialog = null;
+                EftDialog.Close();
+                EftDialog.BtnOK.Click -= BtnOK_Click;
+                EftDialog.BtnCancel.Click -= BtnCancel_Click;
+                EftDialog = null;
             }
             return Task.FromResult(0);
         }
@@ -46,39 +46,41 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
         public Task HandleDisplayResponseAsync(EFTDisplayResponse eftDisplayResponse)
         {
             DisplayResponse = eftDisplayResponse;
-            if (eftDialog == null)
+            if (EftDialog == null)
             {
-                eftDialog = new TestDialogUI();
-                eftDialog.DataContext = this;
-                eftDialog.BtnOK.Click += BtnOK_Click;
-                eftDialog.BtnCancel.Click += BtnCancel_Click;
-                eftDialog.txtResponseLine1.Text = eftDisplayResponse.DisplayText[0];
-                eftDialog.txtResponseLine2.Text = eftDisplayResponse.DisplayText[1];
-                eftDialog.Show();
+                EftDialog = new TestDialogUI
+                {
+                    DataContext = this
+                };
+                EftDialog.BtnOK.Click += BtnOK_Click;
+                EftDialog.BtnCancel.Click += BtnCancel_Click;
+                EftDialog.txtResponseLine1.Text = eftDisplayResponse.DisplayText[0];
+                EftDialog.txtResponseLine2.Text = eftDisplayResponse.DisplayText[1];
+                EftDialog.Show();
             }
-            loadButtons(eftDisplayResponse);
+            LoadButtons(eftDisplayResponse);
             if (eftDisplayResponse.InputType != InputType.None)
             {
-                eftDialog.txtInput.Visibility = System.Windows.Visibility.Visible;
+                EftDialog.txtInput.Visibility = System.Windows.Visibility.Visible;
             }
             return Task.FromResult(0);
         }
 
         private void BtnOK_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            switch (eftDialog.BtnOK.Content)
+            switch (EftDialog.BtnOK.Content)
             {
                 case ("OK"):
-                    EFTClientIPAsync?.WriteRequestAsync(new EFTSendKeyRequest() { Key = EFTPOSKey.OkCancel, Data = (eftDialog.txtInput.Text != "") ? eftDialog.txtInput.Text : null });
+                    EFTClientIPAsync?.WriteRequestAsync(new EFTSendKeyRequest() { Key = EFTPOSKey.OkCancel, Data = (EftDialog.txtInput.Text != "") ? EftDialog.txtInput.Text : null });
                     break;
                 case ("Authorise"):
-                    EFTClientIPAsync?.WriteRequestAsync(new EFTSendKeyRequest() { Key = EFTPOSKey.Authorise, Data = (eftDialog.txtInput.Text != "") ? eftDialog.txtInput.Text : null });
+                    EFTClientIPAsync?.WriteRequestAsync(new EFTSendKeyRequest() { Key = EFTPOSKey.Authorise, Data = (EftDialog.txtInput.Text != "") ? EftDialog.txtInput.Text : null });
                     break;
                 case ("Yes"):
-                    EFTClientIPAsync?.WriteRequestAsync(new EFTSendKeyRequest() { Key = EFTPOSKey.YesAccept, Data = (eftDialog.txtInput.Text != "") ? eftDialog.txtInput.Text : null });
+                    EFTClientIPAsync?.WriteRequestAsync(new EFTSendKeyRequest() { Key = EFTPOSKey.YesAccept, Data = (EftDialog.txtInput.Text != "") ? EftDialog.txtInput.Text : null });
                     break;
                 default:
-                    EFTClientIPAsync?.WriteRequestAsync(new EFTSendKeyRequest() { Key = EFTPOSKey.OkCancel, Data = (eftDialog.txtInput.Text != "") ? eftDialog.txtInput.Text : null });
+                    EFTClientIPAsync?.WriteRequestAsync(new EFTSendKeyRequest() { Key = EFTPOSKey.OkCancel, Data = (EftDialog.txtInput.Text != "") ? EftDialog.txtInput.Text : null });
                     break;
 
             }
@@ -86,7 +88,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
 
         private void BtnCancel_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            switch (eftDialog.BtnCancel.Content)
+            switch (EftDialog.BtnCancel.Content)
             {
                 case ("Cancel"):
                     EFTClientIPAsync?.WriteRequestAsync(new EFTSendKeyRequest() { Key = EFTPOSKey.OkCancel });
@@ -101,44 +103,44 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.ViewModel
             }
         }
 
-        private void loadButtons(EFTDisplayResponse eftDisplayResponse)
+        private void LoadButtons(EFTDisplayResponse eftDisplayResponse)
         {
             #region OKButtons
-            if (eftDisplayResponse.AcceptYesKeyFlag == true)
+            if (eftDisplayResponse.AcceptYesKeyFlag)
             {
-                eftDialog.BtnOK.Content = "Yes";
-                eftDialog.BtnOK.Visibility = System.Windows.Visibility.Visible;
+                EftDialog.BtnOK.Content = "Yes";
+                EftDialog.BtnOK.Visibility = System.Windows.Visibility.Visible;
             }
-            else if (eftDisplayResponse.AuthoriseKeyFlag == true)
+            else if (eftDisplayResponse.AuthoriseKeyFlag)
             {
-                eftDialog.BtnOK.Content = "Authorise";
-                eftDialog.BtnOK.Visibility = System.Windows.Visibility.Visible;
+                EftDialog.BtnOK.Content = "Authorise";
+                EftDialog.BtnOK.Visibility = System.Windows.Visibility.Visible;
             }
-            else if (eftDisplayResponse.OKKeyFlag == true)
+            else if (eftDisplayResponse.OKKeyFlag)
             {
-                eftDialog.BtnOK.Content = "OK";
-                eftDialog.BtnOK.Visibility = System.Windows.Visibility.Visible;
+                EftDialog.BtnOK.Content = "OK";
+                EftDialog.BtnOK.Visibility = System.Windows.Visibility.Visible;
             }
             else
             {
-                eftDialog.BtnOK.Visibility = System.Windows.Visibility.Collapsed;
+                EftDialog.BtnOK.Visibility = System.Windows.Visibility.Collapsed;
             }
             #endregion
 
             #region CancelButtons
-            if (eftDisplayResponse.CancelKeyFlag == true)
+            if (eftDisplayResponse.CancelKeyFlag)
             {
-                eftDialog.BtnCancel.Content = "Cancel";
-                eftDialog.BtnCancel.Visibility = System.Windows.Visibility.Visible;
+                EftDialog.BtnCancel.Content = "Cancel";
+                EftDialog.BtnCancel.Visibility = System.Windows.Visibility.Visible;
             }
-            else if (eftDisplayResponse.DeclineNoKeyFlag == true)
+            else if (eftDisplayResponse.DeclineNoKeyFlag)
             {
-                eftDialog.BtnCancel.Content = "No";
-                eftDialog.BtnCancel.Visibility = System.Windows.Visibility.Visible;
+                EftDialog.BtnCancel.Content = "No";
+                EftDialog.BtnCancel.Visibility = System.Windows.Visibility.Visible;
             }
             else
             {
-                eftDialog.BtnCancel.Visibility = System.Windows.Visibility.Collapsed;
+                EftDialog.BtnCancel.Visibility = System.Windows.Visibility.Collapsed;
             }
             #endregion
         }

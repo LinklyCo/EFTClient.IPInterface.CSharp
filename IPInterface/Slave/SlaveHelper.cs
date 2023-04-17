@@ -67,7 +67,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.Slave
     {
     }
 
-    public class SlaveHelper
+    public static class SlaveHelper
     {
         public static SlaveCommandResponse ResponseHelper(EFTSlaveResponse Response)
         {
@@ -157,13 +157,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.Slave
 
     public class SlaveCommandBuilder
     {
-        const char STX = (char)0x02;
-        const char ETX = (char)0x03;
-        const char DLE = (char)0x10;
-
         readonly List<string> commands = new List<string>();
-        char applicationID = '@';
-        char deviceCode = '1';
 
         #region Slave Mode
         public void AddEnterSlaveModeRequest()
@@ -221,19 +215,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.Slave
 
         #region Display
 
-        public void AddDisplayTextRequest(int DisplayLine, int DisplayColumn, string DisplayText)
-        {
-            string displayText = DisplayText.Length > 30 ? DisplayText.Substring(0, 30) : DisplayText;
-            int displayLine = DisplayLine < 0 || DisplayLine > 7 ? 0 : DisplayLine - 1;
-            int displayColumn = DisplayColumn < 0 || DisplayColumn > 99 ? 0 : DisplayColumn - 1;
-            string command = ((char)CommandCode.Display).ToString();
-            command += ' ';
-            command += (displayText.Length + 4).ToString("000");
-            command += displayLine.ToString("00");
-            command += DisplayColumn.ToString("00");
-            command += displayText;
-            commands.Add(command);
-        }
+        public void AddDisplayTextRequest(int DisplayLine, int DisplayColumn, string DisplayText) =>
+            AddDisplayTextRequest(DisplayLine, DisplayColumn, DisplayText, TextAlignment.Left, 30);
+
         public void AddDisplayTextRequest(int DisplayLine, int DisplayColumn, string DisplayText, TextAlignment Alignment, int LineWidth)
         {
             string displayText = DisplayText.Length > 30 ? DisplayText.Substring(0, 30) : DisplayText;
@@ -241,26 +225,26 @@ namespace PCEFTPOS.EFTClient.IPInterface.Slave
                 displayText = displayText.PadLeft(displayText.Length + (LineWidth - displayText.Length) / 2);
             else if (Alignment == TextAlignment.Right)
                 displayText = displayText.PadLeft(LineWidth);
-            int displayLine = DisplayLine < 0 || DisplayLine > 7 ? 0 : DisplayLine - 1;
-            int displayColumn = DisplayColumn < 0 || DisplayColumn > 99 ? 0 : DisplayColumn - 1;
+            int displayLine = DisplayLine <= 0 || DisplayLine > 21 ? 0 : DisplayLine - 1;
+            int displayColumn = DisplayColumn <= 0 || DisplayColumn > 100 ? 0 : DisplayColumn - 1;
             string command = ((char)CommandCode.Display).ToString();
             command += ' ';
             command += (displayText.Length + 4).ToString("000");
             command += displayLine.ToString("00");
-            command += DisplayColumn.ToString("00");
+            command += displayColumn.ToString("00");
             command += displayText;
             commands.Add(command);
         }
         public void AddDisplayImageRequest(int DisplayLine, int DisplayColumn, int ImageID)
         {
-            int displayLine = DisplayLine < 0 || DisplayLine > 7 ? 0 : DisplayLine - 1;
-            int displayColumn = DisplayColumn < 0 || DisplayColumn > 99 ? 0 : DisplayColumn - 1;
+            int displayLine = DisplayLine <= 0 || DisplayLine > 21 ? 0 : DisplayLine - 1;
+            int displayColumn = DisplayColumn <= 0 || DisplayColumn > 100 ? 0 : DisplayColumn - 1;
             string command = ((char)CommandCode.Display).ToString();
-            command += ' ';
+            command += 'I';
             command += "006";
             command += displayLine.ToString("00");
             command += displayColumn.ToString("00");
-            command += ImageID.ToString("00"); ;
+            command += ImageID.ToString("00");
             commands.Add(command);
         }
 
@@ -314,14 +298,14 @@ namespace PCEFTPOS.EFTClient.IPInterface.Slave
 
         public void AddInputRequest(InputPromptMode Mode, int Timeout, int MinLength, int MaxLength, int EntryLine, string DefaultText)
         {
-            int entryLine = EntryLine < 0 || EntryLine > 9 ? 0 : EntryLine - 1;
+            int entryLine = EntryLine <= 0 || EntryLine > 8 ? 0 : EntryLine - 1;
             string command = ((char)CommandCode.Input).ToString();
             command += (char)Mode;
             command += (8 + DefaultText.Length).ToString("000");
             command += Timeout.ToString("000");
             command += MinLength.ToString("00");
             command += MaxLength.ToString("00");
-            command += EntryLine.ToString("0");
+            command += entryLine.ToString("0");
             command += DefaultText;
             commands.Add(command);
         }
@@ -332,8 +316,8 @@ namespace PCEFTPOS.EFTClient.IPInterface.Slave
         {
             var sb = new StringBuilder();
             sb.Append("*");
-            sb.Append(applicationID);
-            sb.Append(deviceCode);
+            sb.Append(ApplicationID);
+            sb.Append(DeviceCode);
             sb.Append(commands.Count.ToString("00"));
             foreach (var c in commands)
             {
@@ -343,16 +327,8 @@ namespace PCEFTPOS.EFTClient.IPInterface.Slave
         }
 
         public string CommandString { get { return CreateSlaveCommandString(); } }
-        public char ApplicationID
-        {
-            get { return applicationID; }
-            set { applicationID = value; }
-        }
-        public char DeviceCode
-        {
-            get { return deviceCode; }
-            set { deviceCode = value; }
-        }
+        public char ApplicationID { get; set; } = '@';
+        public char DeviceCode { get; set; } = '1';
     }
 
     public class SlaveCommandResponse

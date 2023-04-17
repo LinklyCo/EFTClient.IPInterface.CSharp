@@ -12,7 +12,7 @@ namespace IPInterface.TestPOS.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.8.1.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.10.0.0")]
     internal sealed partial class ControlValues : global::System.Configuration.ApplicationSettingsBase {
         
         private static ControlValues defaultInstance = ((ControlValues)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new ControlValues())));
@@ -68,18 +68,6 @@ namespace IPInterface.TestPOS.Properties {
             }
             set {
                 this["LogonTypeIdx"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool TranIsOneButton {
-            get {
-                return ((bool)(this["TranIsOneButton"]));
-            }
-            set {
-                this["TranIsOneButton"] = value;
             }
         }
         

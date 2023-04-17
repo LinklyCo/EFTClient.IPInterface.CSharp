@@ -40,13 +40,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="PCEFTPOS.API.IPInterface, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\PCEFTPOS.API.IPInterface.1.0.0\lib\net451\PCEFTPOS.API.IPInterface.dll</HintPath>
+      <HintPath>..\..\packages\PCEFTPOS.API.IPInterface.1.0.0\lib\net451\PCEFTPOS.API.IPInterface.dll</HintPath>
     </Reference>
     <Reference Include="PCEFTPOS.API.IPInterface.Sample, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\PCEFTPOS.API.IPInterface.Sample.1.0.0\lib\net451\PCEFTPOS.API.IPInterface.Sample.exe</HintPath>
+      <HintPath>..\..\packages\PCEFTPOS.API.IPInterface.Sample.1.0.0\lib\net451\PCEFTPOS.API.IPInterface.Sample.exe</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -111,7 +111,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\IPInterface\IPInterface.csproj">
+    <ProjectReference Include="..\..\IPInterface\IPInterface.csproj">
       <Project>{3de3ff35-5303-41f0-9f66-5b5ab2b6b7df}</Project>
       <Name>IPInterface</Name>
     </ProjectReference>

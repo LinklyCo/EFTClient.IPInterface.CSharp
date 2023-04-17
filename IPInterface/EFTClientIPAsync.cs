@@ -19,7 +19,6 @@ namespace PCEFTPOS.EFTClient.IPInterface
         bool _recvBufWaiting;
 
         int _recvTickCount;
-        EFTRequest _currentRequest;
         EFTRequest _currentStartTxnRequest;
         byte[] _buffer;
 
@@ -230,9 +229,6 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <param name="request"></param>
         private void SetCurrentRequest(EFTRequest request)
         {
-            // Always set _currentRequest to the last request we send
-            _currentRequest = request;
-
             if (request.GetIsStartOfTransactionRequest())
             {
                 _currentStartTxnRequest = request;
@@ -293,7 +289,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
             var tc = System.Environment.TickCount;
             if (_recvBufWaiting && tc - _recvTickCount > 5000 && _recvBuf.Length > 0)
             {
-                Log(LogLevel.Debug, tr => tr.Set($"Data is being cleared from the buffer due to a timeout. Content {_recvBuf.ToString()}"));
+                Log(LogLevel.Debug, tr => tr.Set($"Data is being cleared from the buffer due to a timeout. Content {_recvBuf}"));
                 _recvBufWaiting = false;
                 _recvBuf.Clear();
             }

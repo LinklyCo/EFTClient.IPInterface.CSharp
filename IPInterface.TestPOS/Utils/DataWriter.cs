@@ -34,7 +34,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
             catch
             {
-                items = default(T);
+                items = default;
             }
 
             return false;
@@ -48,8 +48,9 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
                 File.WriteAllText(GetPath(filename), json);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine(ex);
             }
 
             return false;

@@ -215,6 +215,10 @@ namespace PCEFTPOS.EFTClient.IPInterface
         /// <value>Type: <see cref="System.Decimal" /></value>
         public decimal AvailableBalance { get; set; } = 0;
 
+        /// <summary>Cleared balance on the processed account.</summary>
+        /// <value>Type: <see cref="System.Decimal" /></value>
+        public decimal ClearedFundsBalance { get; set; } = 0;
+
         /// <summary>Indicates if the transaction was perform as a training mode transaction.</summary>
         /// <value>Type: <see cref="System.Boolean" /></value>
         public bool IsTrainingMode { get; set; } = false;

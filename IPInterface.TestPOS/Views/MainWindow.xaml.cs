@@ -80,7 +80,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             svLog.ScrollToBottom();
         }
 
-        private void tcUtilities_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void TcUtilities_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (tcUtilities == null || tbLog == null)
                 return;
@@ -92,12 +92,12 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
         }
 
-        private void chkPadItem_Checked(object sender, RoutedEventArgs e)
+        private void ChkPadItem_Checked(object sender, RoutedEventArgs e)
         {
             PadCheckBoxChecked(sender, e);
         }
 
-        private void chkPadItem_Unchecked(object sender, RoutedEventArgs e)
+        private void ChkPadItem_Unchecked(object sender, RoutedEventArgs e)
         {
             PadCheckBoxUnchecked(sender, e);
         }
@@ -114,7 +114,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
         }
 
-        private void cboTPad_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        private void CboTPad_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == System.Windows.Input.Key.Enter
                     && sender is ComboBox cbo
@@ -133,7 +133,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
         }
 
-        private void cboTPad_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void CboTPad_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             e.Handled = true;
         }
@@ -182,7 +182,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
             }
         }
 
-        private class ControlValue
+        private sealed class ControlValue
         {
             public ControlValue(Action store, Action restore)
             {
@@ -201,8 +201,6 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
                 _controlValueActions = new List<ControlValue>
                 {
                     new ControlValue(() => ControlValues.Default.LogonTypeIdx           = cboLogonType.SelectedIndex              , () => vm.Data.SelectedLogon                   = vm.Data.LogonList[ControlValues.Default.LogonTypeIdx]),
-                    new ControlValue(() => ControlValues.Default.TranIsOneButton        = vm.Data.IsOneButton                     , () => vm.Data.IsOneButton                     = ControlValues.Default.TranIsOneButton),
-                    new ControlValue(() => ControlValues.Default.TranIsETS              = vm.Data.IsETS                           , () => vm.Data.IsETS                           = ControlValues.Default.TranIsETS),
                     new ControlValue(() => ControlValues.Default.TranTxnRef             = vm.Data.TransactionReference            , () => vm.Data.TransactionReference            = ControlValues.Default.TranTxnRef),
                     new ControlValue(() => ControlValues.Default.TranAutoTxnRef         = vm.Data.AutoTransactionReference        , () => vm.Data.AutoTransactionReference        = ControlValues.Default.TranAutoTxnRef),
                     new ControlValue(() => ControlValues.Default.TranTxnTypeIdx         = vm.Data.TxnTypeIdx                      , () => vm.Data.TxnTypeIdx                      = ControlValues.Default.TranTxnTypeIdx),
@@ -253,7 +251,10 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS
                 {
                     controlValue.Restore();
                 }
-                catch (Exception) { }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(ex);
+                }
             }
         }
 

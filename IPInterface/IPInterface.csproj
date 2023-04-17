@@ -1,96 +1,126 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netcoreapp2.1;netcoreapp3;netcoreapp3.1;net45;net451;net452;net46;net461;net462;net47;net471;net472;net48</TargetFrameworks>
+    <TargetFrameworks>net6;netstandard2.0;netcoreapp2.1;netcoreapp3;netcoreapp3.1;net45;net451;net452;net46;net461;net462;net47;net471;net472;net48</TargetFrameworks>
+    <!-- The following line is used to silence warnings that netcoreapp2.1 and
+        netcoreap3 are out of date. Remove it if we stop support for those two
+        targets -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <AssemblyName>PCEFTPOS.EFTClient.IPInterface</AssemblyName>
     <Title>PCEFTPOS.EFTClient.IPInterface</Title>
     <PackageId>PCEFTPOS.EFTClient.IPInterface</PackageId>
-    <Version>1.6.8</Version>
     <Description>TCP/IP library used for connecting to Linkly EFT-Client</Description>
     <Authors>Linkly</Authors>
     <Company>Linkly</Company>
-    <Copyright>Copyright 2022</Copyright>
+    <Copyright>Copyright 2023</Copyright>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>PCEFTPOS PC-EFTPOS Linkly</PackageTags>
     <PackageProjectUrl>https://github.com/pceftpos/EFTClient.IPInterface.CSharp</PackageProjectUrl>
     <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>pceftpos.pfx</AssemblyOriginatorKeyFile>
-    <PackageReleaseNotes>1.6.8 (2022-06-07)
-* [STRY0192268] Fixes for SonarCloud Static Code Analysis:
-  * Added SSL Certificate checking for non-async EFT-Client Interface
-  * Fixing syntax for some XML comments
+    <Version>1.7.3.0</Version>
+    <PackageReleaseNotes>
+		1.7.3 (2023-03-31)
+		* [STRY0228186] Removing length check from EFTQueryCardRespons, will parse response if it doesn't have PAD data
+		* [STRY0228186] Correctly parsing `EFTGetLastResponse` by adding missing `ClearedFundsBalance`
+			* This fixes an issue where PAD data was being omitted
 
-1.6.7 (2022-04-22)
-* Consolidating IPInterface version numbers
+		1.7.2 (2022-09-13)
+		* Add "Simulated Host" pinpad network type option.
 
-1.6.6 (2022-03-29)
-* 'StringExtension.StrLen' function now returns correct values when startIndex argument has a non-zero value
-* 'IntegerExtension.PadLeft' no longer throws an exception if called on a negative
-* 'DecimalExtension.PadLeft' no longer throws an exception if called on a negative
-* 'AccountTypeExtension.FromString' now returns AccountType.Default if input string is null instead of throwing exception
-* 'EFTClientIPAsync.FromString' now now returns the result returned to it by it's enclosed client stream instead of just always returning true unless there is an exception
-* 'DirectEncoding.GetBytes' functions now correctly handle the charCount argument and raise more helpful exceptions
-* Created static class 'EFTRequestCommandCode' which has publicly accessible constants for EFTRequest command codes
-* Removed (many of but not all) of the "magic strings" used by DefaultMessageParser when generating EFTRequests
-* Updated property names on ControlPanelRequest and EFTControlPanelRequest to be in line with spec and other EFTRequests. Old property names have been marked obsolete, but are still supported.
-* EFTClientIPAsync now correctly disposes it's wrapped ITCPSocketAsync when it replaces it with a new connection and when it itself is disposed
+		1.7.1 (2022-08-31)
+		* Add ability to open the client GUI main dialog.
 
-1.6.5 (2022-03-15)
-* Aligning `EFTTerminalType` enum list with spec
+		1.7.0 (2022-07-18)
+		* Adds handling for sending and recieving Monitoring ('|') messages
 
-1.6.4 (2022-02-24)
-* Fixing Null reference exception when receiving data using EFTClientIP and no subscribed DialogUIHandler
+		1.6.11 (2022-06-28)
+		* Adds DataField property to EFTTransactionRequest, required for AuthPIN ('X') and EnhancedPIN ('K') Transaction Types
+		* Adds required special handling of AuthPIN ('X') and EnhancedPIN ('K') Transaction Types to DefaultMessageParser
+		* Similarly adds (provisional) handling of recieving PINRequest ('W') responses to DefaultMessageParser, which is recieved from client in response to Transaction Rquests of the above two transaction types.
+		
+		1.6.10 (2022-06-22)
+		* Implementing hardening changes suggested by Static Code Analysis
+		
+		1.6.9 (2022-06-16)
+		* Update IPInterface to compile against .NET 6
 
-1.6.3 (2021-12-16)
-* Adding StanVb field to resolve ambiguity in VB.Net due to case-insensitivity
+		1.6.8 (2022-06-07)
+		* [STRY0192268] Fixes for SonarCloud Static Code Analysis:
+		* Added SSL Certificate checking for non-async EFT-Client Interface
+		* Fixing syntax for some XML comments
 
-1.6.2 (2021-12-15)
-* Fixed CancellationTokenSource memory leak
+		1.6.7 (2022-04-22)
+		* Consolidating IPInterface version numbers
 
-1.6.1 (2020-10-1)
-* fixed issue where receipt was still displaying as preprint even though it wasn't
+		1.6.6 (2022-03-29)
+		* 'StringExtension.StrLen' function now returns correct values when startIndex argument has a non-zero value
+		* 'IntegerExtension.PadLeft' no longer throws an exception if called on a negative
+		* 'DecimalExtension.PadLeft' no longer throws an exception if called on a negative
+		* 'AccountTypeExtension.FromString' now returns AccountType.Default if input string is null instead of throwing exception
+		* 'EFTClientIPAsync.FromString' now now returns the result returned to it by it's enclosed client stream instead of just always returning true unless there is an exception
+		* 'DirectEncoding.GetBytes' functions now correctly handle the charCount argument and raise more helpful exceptions
+		* Created static class 'EFTRequestCommandCode' which has publicly accessible constants for EFTRequest command codes
+		* Removed (many of but not all) of the "magic strings" used by DefaultMessageParser when generating EFTRequests
+		* Updated property names on ControlPanelRequest and EFTControlPanelRequest to be in line with spec and other EFTRequests. Old property names have been marked obsolete, but are still supported.
+		* EFTClientIPAsync now correctly disposes it's wrapped ITCPSocketAsync when it replaces it with a new connection and when it itself is disposed
 
-1.6.0 (2020-09-14)
-* Support for Cloud 2
+		1.6.5 (2022-03-15)
+		* Aligning `EFTTerminalType` enum list with spec
 
-1.5.0 (2020-06-20)
-* Support .Net Core 3.0, .Net Framework 4.8
-* Support for Cloud pairing request and token login
+		1.6.4 (2022-02-24)
+		* Fixing Null reference exception when receiving data using EFTClientIP and no subscribed DialogUIHandler
 
-1.4.6.0 (2019-04-11)
-* Add support for .NET Framework 4.7.2.
+		1.6.3 (2021-12-16)
+		* Adding StanVb field to resolve ambiguity in VB.Net due to case-insensitivity
 
-1.4.5.0 (2018-12-14)
-* Added in Void transaction type
-* Added in a check on msg length for parsing Duplicate Receipt responses so it can handle TPP duplicate responses
-* Fixed 'Display Swipe Card' slave command
-* Added in support for Input On POS display requests
-* Added in MerchantNumber field for GetLastReceipt
+		1.6.2 (2021-12-15)
+		* Fixed CancellationTokenSource memory leak
 
-1.4.4.0 (2018-10-18)
-* Fixed bug with null TcpClient causing exception with IsConnected property
-* Removing catch-throw new Exceptions which suppress stack trace
+		1.6.1 (2020-10-1)
+		* fixed issue where receipt was still displaying as preprint even though it wasn't
 
-1.4.3.0 (2018-10-09)
-* Deleted a hard-coded TxnRef in TestPOS GetLast and ReprintReceipt command
-* Fixed bug in MessageParser that padded the TxnRef rather than leaving it blank, so the EFTClient didn't like it
+		1.6.0 (2020-09-14)
+		* Support for Cloud 2
 
-1.4.2.0 (2018-09-19)
-* Added new ReceiptAutoPrint modes for EFTRequests
-* Updated MessageParser to use non-deprecated properties
+		1.5.0 (2020-06-20)
+		* Support .Net Core 3.0, .Net Framework 4.8
+		* Support for Cloud pairing request and token login
 
-1.4.1.3 (2018-09-12)
-* Fixed for EFTTransactionResponse and typo
+		1.4.6.0 (2019-04-11)
+		* Add support for .NET Framework 4.7.2.
 
-1.4.1.2 (2018-09-12)
-* Changes to fields ReceiptAutoPrint, CutReceipt, AccountType and DateSettlement
+		1.4.5.0 (2018-12-14)
+		* Added in Void transaction type
+		* Added in a check on msg length for parsing Duplicate Receipt responses so it can handle TPP duplicate responses
+		* Fixed 'Display Swipe Card' slave command
+		* Added in support for Input On POS display requests
+		* Added in MerchantNumber field for GetLastReceipt
 
-1.4.1.1 (2018-08-29)
-* Added support for EFTGetLastTransactionRequest by TxnRef
-* Added support for .NET Core 2.1
+		1.4.4.0 (2018-10-18)
+		* Fixed bug with null TcpClient causing exception with IsConnected property
+		* Removing catch-throw new Exceptions which suppress stack trace
 
-1.4.1.0 (2018-07-17)
-* Updated PadField to support IList&lt;PadTag&gt;
+		1.4.3.0 (2018-10-09)
+		* Deleted a hard-coded TxnRef in TestPOS GetLast and ReprintReceipt command
+		* Fixed bug in MessageParser that padded the TxnRef rather than leaving it blank, so the EFTClient didn't like it
+
+		1.4.2.0 (2018-09-19)
+		* Added new ReceiptAutoPrint modes for EFTRequests
+		* Updated MessageParser to use non-deprecated properties
+
+		1.4.1.3 (2018-09-12)
+		* Fixed for EFTTransactionResponse and typo
+
+		1.4.1.2 (2018-09-12)
+		* Changes to fields ReceiptAutoPrint, CutReceipt, AccountType and DateSettlement
+
+		1.4.1.1 (2018-08-29)
+		* Added support for EFTGetLastTransactionRequest by TxnRef
+		* Added support for .NET Core 2.1
+
+		1.4.1.0 (2018-07-17)
+		* Updated PadField to support IList&lt;PadTag&gt;
       
 1.4.0.0 (2018-04-30)
 * Added IDialogUIHandler for easier handling of POS custom dialogs.

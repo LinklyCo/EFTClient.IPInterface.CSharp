@@ -46,7 +46,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.Views
         }
     }
 
-    public class EnumDescriptionConverter : IValueConverter
+    public sealed class EnumDescriptionConverter : IValueConverter
     {
         private string GetEnumDescription(Enum enumObj)
         {
@@ -87,7 +87,7 @@ namespace PCEFTPOS.EFTClient.IPInterface.TestPOS.Views
         }
     }
 
-    public class MerchantNumberDescriptionConverter : IValueConverter
+    public sealed class MerchantNumberDescriptionConverter : IValueConverter
     {
         private string GetEnumDescription(Enum enumObj)
         {

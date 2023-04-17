@@ -20,10 +20,10 @@ namespace PCEFTPOS.EFTClient.IPInterface
         }
 
         [XmlElement("PCEFTPOS_SOURCE")]
-        public string Source { get; set; } = "XML-POS"; // string.Empty;
+        public string Source { get; set; } = "XML-POS";
 
         [XmlElement("PCEFTPOS_DESTINATION")]
-        public string Destination { get; set; } = "PCEFTPOS_DLL_HANDLER"; //string.Empty;
+        public string Destination { get; set; } = "PCEFTPOS_DLL_HANDLER";
 
         [XmlElement("PCEFTPOS_METHOD", IsNullable = false)]
         public PCEFTPOSMethod MethodName { get; set; }
@@ -44,10 +44,10 @@ namespace PCEFTPOS.EFTClient.IPInterface
         }
 
         [XmlElement("PCEFTPOS_SOURCE")]
-        public string Source { get; set; } = "XML-POS"; // string.Empty;
+        public string Source { get; set; } = "XML-POS";
 
         [XmlElement("PCEFTPOS_DESTINATION")]
-        public string Destination { get; set; } = "PCEFTPOS_DLL_HANDLER"; //string.Empty;
+        public string Destination { get; set; } = "PCEFTPOS_DLL_HANDLER";
 
         [XmlElement("PCEFTPOS_EVENT")]
         public PCEFTPOSEvent EventName { get; set; }
@@ -321,7 +321,7 @@ namespace PCEFTPOS.EFTClient.IPInterface
 			   //   so that the extension will skip its input.
 			   // - Example: A GUI could collect the Purchase Amount and start the sale with it already set. The Extension
 			   //   will see that its set and skip the entry routine.
-			   "TO_GUI".Name = "Variables"
+			    - "TO_GUI".Name = "Variables"
 					- ["AmtPurchase"] = "";
 					- ["AmtCash"] = "";
 					- ["AmtRefund"] = "100"; // $1.00

@@ -5,26 +5,19 @@ using System.Xml.Serialization;
 
 namespace PCEFTPOS.EFTClient.IPInterface
 {
-    public class XMLSerializer
+    public static class XMLSerializer
     {
         public static string Serialize<T>(T input)
         {
             var xml = string.Empty;
-            try
+            XmlSerializer serializer = new XmlSerializer(typeof(T));
+            using (StringWriter textWriter = new StringWriter())
             {
-                XmlSerializer serializer = new XmlSerializer(typeof(T));
-                using (StringWriter textWriter = new StringWriter())
+                using (XmlWriter xmlWriter = XmlWriter.Create(textWriter))
                 {
-                    using (XmlWriter xmlWriter = XmlWriter.Create(textWriter))
-                    {
-                        serializer.Serialize(xmlWriter, input);
-                    }
-                    xml = textWriter.ToString();
+                    serializer.Serialize(xmlWriter, input);
                 }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
+                xml = textWriter.ToString();
             }
 
             return xml;

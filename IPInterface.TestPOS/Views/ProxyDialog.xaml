@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:PCEFTPOS.EFTClient.IPInterface.TestPOS"
         mc:Ignorable="d"
         Title="Customer Display" Width="515" WindowStartupLocation="CenterScreen" WindowStyle="ToolWindow"
-        SizeToContent="Height" Topmost="True" Closed="Window_Closed" Closing="Window_Closing" ResizeMode="NoResize" >
+        SizeToContent="Height" Topmost="True" Closing="Window_Closing" ResizeMode="NoResize" >
     <Window.Resources>
         <Style TargetType="Button" x:Key="BaseButtonStyle">
             <Setter Property="HorizontalAlignment" Value="Left" />

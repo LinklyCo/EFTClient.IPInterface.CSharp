@@ -102,19 +102,19 @@
                     </Button>
                     <Button x:Name="btnMUpdate" Content="Update" Width="50" Height="27" Margin="0,0,0,0" 
                             Style="{StaticResource EditModeButtonStyle}"
-                            Click="btnMUpdate_Click"/>
+                            Click="BtnMUpdate_Click"/>
                     <!--Command="{Binding UpdatePadContent}" CommandParameter="{Binding ElementName=lstPadContent, Path=SelectedIndex}"-->
                     <Button x:Name="btnMAdd" Content="Add" Width="50" Height="27" IsEnabled="True"
                             Style="{StaticResource BaseButtonStyle}"
-                            Click="btnMAdd_Click" />
+                            Click="BtnMAdd_Click" />
                 </WrapPanel>
             </StackPanel>
             <ListBox Grid.Row="1" x:Name="lstPadContent" ItemsSource="{Binding PadContentList}" FontSize="13"
-                     SelectionChanged="lstPadContent_SelectionChanged" VerticalAlignment="Stretch"/>
+                     SelectionChanged="LstPadContent_SelectionChanged" VerticalAlignment="Stretch"/>
             <DockPanel Grid.Row="2">
-                <Button x:Name="btnMUp"   DockPanel.Dock="Left" VerticalAlignment="Top" Content="▲" IsEnabled="False" Click="btnMUp_Click"   Margin="0,0,2,0"/>
-                <Button x:Name="btnMDown" DockPanel.Dock="Left" VerticalAlignment="Top" Content="▼" IsEnabled="False" Click="btnMDown_Click" Margin="0"/>
-                <Button DockPanel.Dock="Right" x:Name="btnMDone" Content="Save" Width="100" Click="btnDone_Click" Style="{StaticResource BaseButtonStyle}"/>
+                <Button x:Name="btnMUp"   DockPanel.Dock="Left" VerticalAlignment="Top" Content="▲" IsEnabled="False" Click="BtnMUp_Click"   Margin="0,0,2,0"/>
+                <Button x:Name="btnMDown" DockPanel.Dock="Left" VerticalAlignment="Top" Content="▼" IsEnabled="False" Click="BtnMDown_Click" Margin="0"/>
+                <Button DockPanel.Dock="Right" x:Name="btnMDone" Content="Save" Width="100" Click="BtnDone_Click" Style="{StaticResource BaseButtonStyle}"/>
                 <TextBlock DockPanel.Dock="Right"/>
             </DockPanel>
             <WrapPanel Grid.Row="2" HorizontalAlignment="Right" VerticalAlignment="Center" >
@@ -140,7 +140,7 @@
                 <ColumnDefinition  Width="*"/>
             </Grid.ColumnDefinitions>
             <ListBox Grid.Column="0" x:Name="lstPadEditor" ItemsSource="{Binding PadTags}" FontSize="13"
-                     SelectionChanged="lstPadEditor_SelectionChanged"/>
+                     SelectionChanged="LstPadEditor_SelectionChanged"/>
             <StackPanel Grid.Column="1">
                 <WrapPanel Margin="0,5,0,5">
                     <Label Content="Name:" Width="50"/>
@@ -157,19 +157,19 @@
                             Command="{Binding DeletePadTag}" CommandParameter="{Binding ElementName=lstPadEditor, Path=SelectedIndex}"/>
                     <Button x:Name="btnUpdate" Content="Update" Width="50" Height="27" Margin="0,0,0,0" 
                             Style="{StaticResource EditValueButtonStyle}"
-                            Click="btnUpdate_Click"/>
+                            Click="BtnUpdate_Click"/>
                     <Button x:Name="btnAdd" Content="Add" Width="50" Height="27" IsEnabled="True" 
                             Style="{StaticResource BaseButtonStyle}"
-                            Click="btnAdd_Click"/>
+                            Click="BtnAdd_Click"/>
                 </WrapPanel>
             </StackPanel>
             <WrapPanel Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" Margin="0,0,0,0">
                 <Button x:Name="btnBack" Content="Back" HorizontalAlignment="Right" Width="100" 
                         Style="{StaticResource BaseButtonStyle}"
-                        Click="btnBack_Click" />
+                        Click="BtnBack_Click" />
                 <Button x:Name="btnSave" Content="Save" HorizontalAlignment="Right" Width="100" 
                         Style="{StaticResource BaseButtonStyle}"
-                        Click="btnSave_Click"/>
+                        Click="BtnSave_Click"/>
             </WrapPanel>
         </Grid>
     </Grid>

@@ -14,10 +14,7 @@
     <Setting Name="LogonTypeIdx" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
-    <Setting Name="TranIsOneButton" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="TranIsETS" Type="System.Boolean" Scope="User">
+	  <Setting Name="TranIsETS" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
     <Setting Name="TranTxnRef" Type="System.String" Scope="User">
